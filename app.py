@@ -129,7 +129,7 @@ div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font
 [data-testid="stSelectbox"] [role="group"]{ border:1px solid #d5dbe4 !important; }
 [data-testid="stTextInputRootElement"]:focus-within, [data-testid="stMultiSelect"] [role="group"]:focus-within{ border-color:var(--azul) !important; }
 .st-key-lote [role="group"]{ background:transparent !important; border:none !important; }
-[data-testid="stLayoutWrapper"] [data-testid="stVerticalBlock"]{ background:var(--branco) !important; border-radius:18px; }
+[class*="st-key-painel"]{ background:var(--branco) !important; border-radius:18px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -284,7 +284,7 @@ st.markdown('<div class="secao-espaco"></div>', unsafe_allow_html=True)
 # ================= EXCEÇÕES
 if vista.startswith("Exceções"):
     ordem = cs.assign(p=cs.efetiva.isna()).sort_values(["p", "valor"], ascending=[False, False])
-    with st.container(border=True):
+    with st.container(border=True, key="painel1"):
         st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Exceções do lote</h3>'
                     '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 4px">Um caso por fornecedor e problema. '
                     'O agente propõe a ação; quem tem a alçada decide. O que for aprovado volta ao lote quando faz sentido.'
@@ -382,7 +382,7 @@ if vista.startswith("Exceções"):
                     st.rerun()
     if len(al_vis):
         st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-        with st.container(border=True):
+        with st.container(border=True, key="painel2"):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Alertas da caixa de e-mail</h3>'
                         '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 4px">Não seguram nenhum título; '
                         'avisam quem precisa agir.</div>', unsafe_allow_html=True)
@@ -424,7 +424,7 @@ elif vista == "Lote final":
       com a diretora</div></div>""", unsafe_allow_html=True)
     if len(pendentes):
         st.warning(f"{len(pendentes)} caso(s) sem decisão ficam fora deste lote até alguém decidir.")
-    with st.container(border=True):
+    with st.container(border=True, key="painel3"):
         st.markdown(tabela(linhas, [("titulo_id", "Título", ""), ("forn", "Fornecedor", ""), ("venc", "Vence", "num"),
                                     ("destino", "Destino do pagamento", ""), ("aprov", "Aprovação", ""),
                                     ("obs_html", "Situação", ""), ("valor", "Valor", "num forte")]),
@@ -464,7 +464,7 @@ elif vista == "Caixa de e-mail":
             "Troca de conta (IA)": base.pede_troca_bancaria.map({True: "Sim", False: "Não"}).fillna("—"),
             "Ordem ao agente (IA)": base.tenta_instruir_agente.map({True: "Sim", False: "Não"}).fillna("—"),
             "Confiança": base.confianca, "Suspeita (código)": base.suspeita.map(rot).fillna("—")})
-        with st.container(border=True):
+        with st.container(border=True, key="painel4"):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">E-mails</h3>'
                         '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Clique numa linha para retirar '
                         'do lote os títulos ligados àquele e-mail.</div>', unsafe_allow_html=True)
@@ -479,7 +479,7 @@ elif vista == "Caixa de e-mail":
         linha_sel = sel.selection.rows[0] if sel and sel.selection.rows else None
         email = base.iloc[linha_sel] if linha_sel is not None else None
         st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-        with st.container(border=True):
+        with st.container(border=True, key="painel5"):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Retirar títulos do lote</h3>',
                         unsafe_allow_html=True)
             rotulo_tit = {t.titulo_id: f"{t.titulo_id} · {t.razao_social} · {brl(t.valor)}" for t in seguem.itertuples()}
@@ -555,7 +555,7 @@ elif vista == "Planilha mãe":
         mae = mae[(mae.decisao == "liberar") if so == "Seguem" else (mae.decisao != "liberar")]
     if forma != "Todas":
         mae = mae[mae.forma_pagamento == forma]
-    with st.container(border=True):
+    with st.container(border=True, key="painel6"):
         st.dataframe(pd.DataFrame({
             "Título": mae.titulo_id, "Fornecedor": mae.razao_social, "NF digitada": mae.numero_nf_digitado,
             "Parcela": mae.parcela, "Valor": mae.valor, "Duplicata": mae.valor_duplicata,
@@ -579,7 +579,7 @@ else:
                  .agg(valor=("valor", "sum"), qtd=("qtd", "sum")).sort_values("valor", ascending=False))
     l1, l2 = st.columns(2)
     with l1:
-        with st.container(border=True):
+        with st.container(border=True, key="painel7"):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Dinheiro protegido por tipo de problema</h3>'
                         '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">Fila inteira, 03/11 a 13/11</div>',
                         unsafe_allow_html=True)
@@ -588,7 +588,7 @@ else:
                                [("tipo_html", "Problema", ""), ("qtd", "Títulos", "num"), ("valor", "Valor", "num forte")],
                                altura=420), unsafe_allow_html=True)
     with l2:
-        with st.container(border=True):
+        with st.container(border=True, key="painel8"):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Próximos fechamentos</h3>'
                         '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">O que vai ao banco em cada lote</div>',
                         unsafe_allow_html=True)
