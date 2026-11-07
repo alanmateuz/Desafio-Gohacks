@@ -14,6 +14,11 @@ TOLERANCIA_DUPLICATA = 0.10  # politicas.csv tres_vias.titulo_x_duplicata (vai p
 ALCADA_ANALISTA = 5000.0  # politicas.csv alcadas.analista_cp.*_ate
 
 
+def brl(v: float) -> str:
+    """R$ no formato brasileiro: 90.873,80."""
+    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 def normalizar_nf(numero: str) -> str:
     """'000011045' -> '11045'; '11079-1' -> '11079'; '36495/1' -> '36495'; vazio -> ''."""
     texto = str(numero or "").strip()
@@ -158,8 +163,8 @@ def avaliar(titulo: dict) -> list[dict]:
             "regra": "valor_diferente_duplicata",
             "decisao": "retirar", "acao": "corrigir_lancamento",
             "acionar": APROVADOR if diferenca > ALCADA_ANALISTA else None,
-            "fato": f"título de R$ {valor:,.2f}, mas a duplicata da parcela {titulo['parcela']} é de "
-                    f"R$ {float(vdup):,.2f} (diferença de R$ {diferenca:,.2f})",
+            "fato": f"título de {brl(valor)}, mas a duplicata da parcela {titulo['parcela']} é de "
+                    f"{brl(float(vdup))} (diferença de {brl(diferenca)})",
         })
     return violacoes
 

@@ -177,3 +177,8 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Descartei:** botões "Aprovar" dentro do Slack (exige servidor público para receber o clique), que ficou como próximo passo do slide 8. Também descartei o patch que outro Claude montou numa cópia remota do repositório, porque não chegou aqui (sem push). Refiz localmente, com o chat que ele não tinha.
 - **IA errou?** O alerta de phishing saiu com fornecedor "—" no chat. Vi no navegador e troquei para "Caixa de e-mail · remetentes desconhecidos". Os motivos vêm das regras com valor no formato americano (R$ 90,873.80), o que é anterior a esta mudança e fica anotado para corrigir.
 - **Resultado:** 15 avisos em 4 mensagens (bate com os 15 acionamentos), 4 testes novos, 32/32 passando.
+
+### [15:28] Valores dos motivos no formato brasileiro
+- **Decisão:** a regra "valor diferente da duplicata" passa a escrever R$ 90.873,80, e não R$ 90,873.80 (`brl()` em `src/regras.py`).
+- **Por quê:** o motivo aparece no painel, no chat da equipe e na demo. Com o valor no formato americano, um zero a mais podia ser lido como vírgula.
+- **IA errou?** O formato veio do código gerado com `:,.2f`, o padrão americano. Vi no texto dos avisos, corrigi e rodei 32/32 testes.
