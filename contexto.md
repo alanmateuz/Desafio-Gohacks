@@ -1,6 +1,6 @@
 # Contexto do projeto (handoff para outro Claude)
 
-Atualizado em 07/11/2026, ~12h55 (camadas 1.1, 2 e 3 prontas; painel com a identidade Gogroup; próximo passo: revisão visual do painel). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
+Atualizado em 07/11/2026, ~13h55 (código pronto: camadas 1.1, 2 e 3, painel no layout do wireframe, CRUD das suspeitas; próximo passo: pitch e submissão). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
 
 ## Quem e o quê
 - **Mateus** (git: `alanmateuz`) participa do **GoHacks Talent**, um hackathon individual de 1 dia. A construção vai das 9h40 às 16h30, o código congela às 15h30 e a submissão fecha às 16h30.
@@ -14,9 +14,9 @@ Atualizado em 07/11/2026, ~12h55 (camadas 1.1, 2 e 3 prontas; painel com a ident
 | Descoberta | ⚠️ As perguntas para o mentor foram escritas (Parte 2), mas **o cenário mudou** (ver abaixo). A fonte agora são as bases em `dados/`, não o mentor. |
 | Problema | ✅ Aprovado (Parte 3 de `01-problema.md`). Tem o mapa de dores com score, a frase, o usuário, a hipótese, o experimento, as métricas, o escopo e 8 critérios de aceite. |
 | Solução | ✅ Aprovada (`02-solucao.md`). Guardião do lote com planilha mãe e painel. |
-| Construir | ✅ Camada 1 (`885bc38`, tag `v1-demo`) → 1.1 (`7196c73`) → 2: IA lendo e-mails (`6b7ede9`) → 3: painel Gogroup com aprovação humana (`97f4f07`). 🔨 **Próximo passo: revisão visual do painel** (ver a seção no fim). |
+| Construir | ✅ Camada 1 (`885bc38`, tag `v1-demo`) → 1.1 (`7196c73`) → 2: IA lendo e-mails (`6b7ede9`) → 3: painel com aprovação humana (`97f4f07`) → revisões visuais e CRUD das suspeitas (`53a1ae9` … `2957fd2`). Ver "Painel atual". |
 | Testes | ✅ Gabarito de 26 casos das regras: **antes 22/26 → depois 26/26**. Gabarito de 30 e-mails da IA: **97–100%**. pytest 26/26. Tabela em `eval/antes_depois.csv`. |
-| Pitch | 🟡 8 slides feitos no Canva por outra sessão (design "Pitch GoHacks", sem publicar). O Mateus precisa conferir o slide 8. `projeto/03-pitch.md`, `04-submissao.md`, `05-relatorio.md` e `README.md` **ainda não foram preenchidos**. |
+| Pitch | 🔨 **Próximo passo.** 8 slides feitos no Canva por outra sessão (design "Pitch GoHacks", sem publicar); o Mateus precisa conferir o slide 8. `projeto/03-pitch.md`, `04-submissao.md`, `05-relatorio.md` e `README.md` **ainda não foram preenchidos**. |
 
 ### Problema aprovado
 - **Frase do Mateus:** "O volume de pagamentos é tão grande que o processo vira manual e impossível de revisar, abrindo espaço para golpes e perda de dinheiro."
@@ -185,42 +185,63 @@ python -m streamlit run app.py            # painel em http://localhost:8501
 - A IA não mudou nenhuma decisão, só acrescentou evidência.
 - A leitura dos 246 e-mails custou US$ 0,0059.
 
-**Painel atual (`app.py`, commit `97f4f07`):** uma página só, com rolagem.
-- Topo com o logo, a pílula "GUARDIÃO DO LOTE" e o status da IA.
-- Seletor de lote; o padrão é Meridiano 03/11 10:00.
-- Bloco azul "Próximo envio" e bloco limão "Precisa da sua decisão".
-- 4 cards de números.
-- Abas "Exceções" (cards por caso, com evidência e botões), "Caixa de e-mail", "Planilha mãe" e "Lote final" (com CSV).
+**Painel atual (`app.py`, commit `2957fd2`), no layout do wireframe do Mateus.** Rode com `python -m streamlit run app.py`; o painel fica em http://localhost:8501.
 
-O `dados/decisoes_humanas.json` foi apagado para a demo começar limpa.
+**Cabeçalho**
+- À esquerda, "Lote de remessa" em letra pequena e, embaixo, **o próprio título funcionando como seletor de lote** (`selectbox` com `key="lote"`, estilizado por `.st-key-lote`).
+- À direita, "GoGuardian", o logo oficial da Gogroup e o status da IA.
+- Embaixo do título, um subtítulo com a quantidade de títulos, o valor na fila e a referência.
 
-## Próximo passo: revisão visual do painel (pedido do Mateus às 12h50)
-O Mateus disse: "o site está até bom, mas precisa de uma revisão visual. É uma tela onepager. As informações monetárias devem ter um destaque maior. Tem muitas coisas cortadas ou mal feitas."
+**4 KPIs** (`kpi()`): rótulo e ícone pequeno em cima, **valor em R$ grande** embaixo.
+- Vai ao banco.
+- Protegido.
+- Precisa de decisão.
+- Pessoas acionadas.
 
-Ele mandou **2 telas de referência** (prints de sistemas de gestão financeira), que mostram:
-- **menu lateral fixo à esquerda**, com fundo escuro, ícone e nome por item (Painel, Agenda, Pessoas, Produtos, Vendas, Financeiro...), o usuário no topo e cada seção numa tela própria;
-- **barra superior** com o título da tela ("Movimento Financeiro") e o usuário à direita;
-- **4 cards de KPI em linha**, cada um com um **bloco colorido de ícone** (verde, azul, laranja, vermelho) e, ao lado, o rótulo pequeno ("A Receber Hoje", "Pagtos em Atraso") e o **valor em R$ grande** ("R$ 3.275,00", "16.922,05");
-- **barra de ações e filtros** acima da tabela (Inserir, Excel, Relatórios, "Filtrar por Data Vencimento / Este mês");
-- **tabela compacta e alinhada**, com categoria, vencimento, descrição, pessoa, valor alinhado à direita, selo vermelho "Vencido", ações por linha e paginação ("Página 4 de 7").
+**Abas sublinhadas** (`segmented_control` com `key="secao"`, estilizado por `.st-key-secao`): **Exceções · Caixa de e-mail · Planilha mãe · Lote final**.
 
-**O que corrigir** (o que o agente dev viu no painel atual):
-- o título do bloco azul quebra em 2 linhas ("…fecha às / 10:00");
-- há colunas cortadas nas tabelas: o fornecedor aparece como "Embalarte Indústria e Comércio de Embalag…" e a coluna "Observação" fica cortada;
-- as abas parecem botões quadrados, e não pílulas;
-- os valores em R$ dos cards são pequenos e cinza, mas o destaque precisa ser **o dinheiro**;
-- tudo fica numa página só, com muita rolagem.
+**Exceções**
+- 1 card por caso, com selo, fornecedor, títulos, motivo, evidência do e-mail e **R$ em destaque**.
+- 4 botões iguais:
+  - **ação proposta** (rosa);
+  - **Liberar mesmo assim** (em caso de fraude, pede confirmação e motivo);
+  - **Manter fora do lote**;
+  - **Nota e responsável**.
+- **Desfazer decisão**, e também **Desfazer ação do agente** quando o caso foi resolvido sozinho dentro da alçada.
+- Seção **Retiradas manuais**, com o botão **Devolver ao lote**.
+- **Alertas da caixa**, com **Marcar como ciente**.
 
-**Direção proposta.** Manter o brandbook: azul `#2659a5` como protagonista, Poppins, pílulas, cantos arredondados, logo sem alterações e o nome sempre "Gogroup".
-1. **Menu lateral** com `st.sidebar`: logo no topo, seletor de lote e os itens Painel, Exceções, Caixa de e-mail, Planilha mãe e Lote final (um `st.radio` estilizado). Cada item é uma tela, sem rolagem longa.
-2. **Barra superior** com o título da tela, o lote, o horário de fechamento e o status da IA.
-3. **Cards de KPI como nas referências.** Bloco de ícone colorido com a paleta da marca: azul = vai ao banco; vermelho `#e5273c` = retido por suspeita; amarelo `#f8ae13` = precisa de decisão; azul-claro `#3dbfef` = pessoas acionadas. **Valor em R$ com 1,9–2,2rem e peso 800.**
-4. **Na tela Painel**, ao lado dos KPIs: "Dinheiro protegido por tipo de problema" (R$ por regra) e "Próximos fechamentos" (lote, hora, R$ e retidos).
-5. **Tabelas sem cortes:** larguras com `st.column_config` (Fornecedor "large", R$ alinhado à direita), ou tabela HTML própria com quebra de linha nas telas com poucas linhas.
-6. **Conferir no navegador** em 1366 e 1920 px e com o tema escuro do navegador (o `config.toml` já força o tema claro).
-7. **Lembrete:** o Streamlit quebra o `<style>` quando há linhas em branco; mantenha o CSS sem linhas vazias.
+**Caixa de e-mail**
+- KPIs da caixa.
+- Filtro Suspeitos / Em revisão / Todos.
+- Tabela com **seleção por linha**: ao clicar num e-mail, o formulário **Retirar títulos do lote** vem preenchido com os títulos do fornecedor (só os da NF citada, se houver) e com o motivo.
 
-**Depois:** o `/pitch` (03-pitch, 04-submissao com contagem de caracteres, 05-relatorio e README), usando os números de `decisoes.md` e de `eval/antes_depois.csv`.
+**Planilha mãe:** busca e filtros (decisão, forma de pagamento), com as colunas com largura definida.
+
+**Lote final**
+- Faixa azul com o total a enviar.
+- Tabela HTML sem cortes, já com a conta revertida ou o valor corrigido quando aprovado.
+- Exportação em CSV.
+
+**CRUD das suspeitas** (`src/decisoes_humanas.py`, arquivo `dados/decisoes_humanas.json`, no formato `{"casos": {...}, "manuais": {...}}`): criar (retirada manual), ler, atualizar (aprovar, liberar, manter, nota, responsável) e excluir (desfazer, devolver), sempre com registro de quem fez e quando. O arquivo é apagado antes da demo para começar limpo.
+
+**Testado no navegador em 1366 px e em ~700 px:** aprovar, manter, desfazer ação do agente, retirar e devolver (os valores bateram ao centavo). Ainda não conferido em 1920 px.
+
+## Próximo passo: `/pitch` e submissão (código congela às 15h30, envio até 16h30)
+1. `projeto/03-pitch.md`: roteiro de 5 min e de 90 s, com os números de `decisoes.md` e de `eval/antes_depois.csv`.
+2. `projeto/04-submissao.md`: os 5 campos, com contagem de caracteres (80/600/800/800/500).
+3. `projeto/05-relatorio.md`: relatório individual em 1ª pessoa, com os erros da IA que foram pegos. Há vários registrados em `decisoes.md`: o arredondamento de 0,10; o cache; a alçada; a conta do golpista no lote final; os horários estimados; e a liberação acidental do boleto falso.
+4. `README.md`: como rodar o projeto e o que ele faz.
+5. Conferir os 8 slides no Canva (design "Pitch GoHacks"), principalmente o slide 8, e alinhar com o painel novo.
+
+**Números para o pitch:**
+- Fila de 876 títulos e R$ 10,2 mi.
+- 49 títulos retidos, somando R$ 483,6 mil, em 21 casos.
+- Cerca de R$ 466 mil sairiam indevidamente sem o guardião.
+- 15 acionamentos, em vez de 1 por título.
+- Gabarito das regras: 22/26 → 26/26.
+- Gabarito da IA: 97–100%.
+- Leitura dos e-mails: US$ 0,0059.
 
 ## Ambiente
 - **Repositório:** `https://github.com/alanmateuz/Desafio-Gohacks`, branch `main`. O histórico começa em 07/11/2026, e o Mateus não quer nenhum commit com data anterior a isso. Rode `git pull` antes de codar.
