@@ -19,19 +19,24 @@ Transportes ficou fora: tende a virar painel/análise (o que a página diz que *
 
 ## Parte 2 — Descoberta (`/descoberta`)
 
-**As 3 perguntas da dor**
-1. Qual é a parte mais frustrante disso hoje?
-2. Como vocês contornam isso hoje?
-3. Se pudessem mudar uma coisa, o que mudariam?
+**As 3 perguntas da dor** (Pagamentos)
+1. Qual é a parte mais frustrante de pagar fornecedores hoje: cadastrar, conferir ou aprovar?
+2. Quando um pagamento sai errado (duplicado, zero a mais), como vocês descobrem e como corrigem hoje?
+3. Se pudessem mudar uma coisa no processo de pagamento amanhã, o que mudariam?
 
-**Perguntas extras (máx. 12)**
-- Pessoas: quem faz, quantas pessoas, quem sofre com o resultado?
-- Processo: passo a passo de hoje, ferramentas, onde trava?
-- Volume e custo: quantas vezes, quanto tempo cada, % de retrabalho, quanto custa?
-- Dados: de onde vêm, tem um exemplo agora?
-- Sucesso: o que é "bom o suficiente"? Qual número mover?
-- Restrições: o que não pode dar errado? Dado sensível?
-- Replicabilidade: outras marcas/áreas têm o mesmo problema?
+**Perguntas extras** (12, em ordem de prioridade; ★ = fazer primeiro se o tempo for curto)
+- ★ **Volume e custo:** quantos pagamentos por dia/mês, e quantos % dão erro? Qual foi o maior prejuízo com um erro (valor e tempo para recuperar)?
+- ★ **Processo:** qual o passo a passo de hoje, da chegada da nota/boleto até o dinheiro sair? Em quais sistemas o mesmo dado é digitado mais de uma vez?
+- ★ **Restrições:** quem aprova hoje e a partir de que valor? O que o agente **nunca** poderia fazer sozinho?
+- ★ **Dados:** de onde vem cada informação (ERP, banco, e-mail, nota fiscal)? Tem um exemplo de pagamento errado agora, nas bases fictícias?
+- **Processo:** em que momento dá para barrar um pagamento antes de ele sair (agendamento, remessa, aprovação no banco)?
+- **Volume e custo:** quanto tempo uma pessoa gasta para conferir um pagamento? Quantas pessoas fazem isso?
+- **Pessoas:** quem cadastra, quem confere e quem aprova? Quem sofre quando dá errado (financeiro, fornecedor, contabilidade)?
+- **Dados:** quais erros mais acontecem: duplicidade, valor errado, dado bancário errado, fornecedor errado, vencimento errado?
+- **Sucesso:** o que seria "bom o suficiente": pegar quantos % dos erros, com no máximo quantos alarmes falsos por dia?
+- **Restrições:** tem dado sensível (conta bancária, CPF/CNPJ) que não pode ir para um modelo de IA?
+- **Pessoas/Processo:** por onde o time conversa hoje para pedir aprovação (Slack, Google Chat, WhatsApp, e-mail)?
+- **Replicabilidade:** outras marcas ou empresas do grupo pagam do mesmo jeito, nos mesmos sistemas e bancos?
 
 **Anotações**
 | Tema | Fato | Número | Fonte |
