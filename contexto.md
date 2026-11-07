@@ -1,6 +1,6 @@
 # Contexto do projeto (handoff para outro Claude)
 
-Atualizado em 07/11/2026, ~11h10 (verificação da camada 1 feita). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
+Atualizado em 07/11/2026, ~14h20 (camadas 1.1, 2 e 3 prontas; painel com a identidade Gogroup; próximo passo: revisão visual do painel). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
 
 ## Quem e o quê
 - **Mateus** (git: `alanmateuz`) participa do **GoHacks Talent**, um hackathon individual de 1 dia. A construção vai das 9h40 às 16h30, o código congela às 15h30 e a submissão fecha às 16h30.
@@ -14,9 +14,9 @@ Atualizado em 07/11/2026, ~11h10 (verificação da camada 1 feita). Leia junto c
 | Descoberta | ⚠️ As perguntas para o mentor foram escritas (Parte 2), mas **o cenário mudou** (ver abaixo). A fonte agora são as bases em `dados/`, não o mentor. |
 | Problema | ✅ Aprovado (Parte 3 de `01-problema.md`). Tem o mapa de dores com score, a frase, o usuário, a hipótese, o experimento, as métricas, o escopo e 8 critérios de aceite. |
 | Solução | ✅ Aprovada (`02-solucao.md`). Guardião do lote com planilha mãe e painel. |
-| Construir | ✅ Camada 1 pronta (commit `885bc38`, tag `v1-demo`). 🔨 **Próximo passo: camada 1.1**, com 3 regras novas e correção das ações. Ver "Próximo passo: camada 1.1". |
-| Testes | ✅ Verificação da camada 1 feita (11:10, `decisoes.md`). Depois da camada 1.1, vem o `/testes` com o gabarito do Mateus. |
-| Pitch | ⏳ |
+| Construir | ✅ Camada 1 (`885bc38`, tag `v1-demo`) → 1.1 (`7196c73`) → 2: IA lendo e-mails (`6b7ede9`) → 3: painel Gogroup com aprovação humana (`97f4f07`). 🔨 **Próximo passo: revisão visual do painel** (ver a seção no fim). |
+| Testes | ✅ Gabarito de 26 casos das regras: **antes 22/26 → depois 26/26**. Gabarito de 30 e-mails da IA: **97–100%**. pytest 26/26. Tabela em `eval/antes_depois.csv`. |
+| Pitch | 🟡 8 slides feitos no Canva por outra sessão (design "Pitch GoHacks", sem publicar). O Mateus precisa conferir o slide 8. `projeto/03-pitch.md`, `04-submissao.md`, `05-relatorio.md` e `README.md` **ainda não foram preenchidos**. |
 
 ### Problema aprovado
 - **Frase do Mateus:** "O volume de pagamentos é tão grande que o processo vira manual e impossível de revisar, abrindo espaço para golpes e perda de dinheiro."
@@ -39,9 +39,9 @@ Atualizado em 07/11/2026, ~11h10 (verificação da camada 1 feita). Leia junto c
    - Helena PS03 acima disso.
 6. Se a pessoa aprovar, o título volta ao lote.
 
-A **IA (Claude)** só lê e-mails e boletos (JSON validado), marca tentativas de dar ordem ao agente e escreve o motivo. **Ela nunca libera nada.**
+A **IA é o Jev do AI Proxy do evento** (não o Claude: o token liberado é do proxy, no formato OpenAI). Ela só lê os e-mails e responde 3 perguntas (pede troca de conta? tenta dar ordem ao agente? tipo), com saída validada, até 2 tentativas e confiança < 0,7 indo para revisão. **Ela nunca libera nada:** só reforça uma regra que já disparou e gera alertas da caixa. O motivo é montado pelo código.
 
-O **painel** é obrigatório, porque o Mateus quer tudo nele. Tem três telas: planilha mãe, exceções (com Aprovar e Recusar) e lote final. Outras telas serão pensadas depois. O agente age sozinho antes do fechamento; o painel é para ver e decidir.
+O **painel** é obrigatório, porque o Mateus quer tudo nele, com a identidade visual da Gogroup. O agente age sozinho antes do fechamento; o painel é para ver e decidir.
 
 **Mudança de rota (registrada no `decisoes.md`):** os desafios passaram a ser fictícios. É preciso usar as bases enviadas pela organização, e o que faltar pode ser inventado, sempre marcado como `[HIPÓTESE]`.
 
@@ -152,85 +152,84 @@ Atenção ao formato:
 - **Série depois de `-` ou `/`:** `11079-1` e `36495/1` são série, não parcela. A parcela está no campo `parcela` (`n/total`).
 - **TP429834 × TP430006** (Maciez, NF 20329, parcela 2/2): um é TED e o outro é boleto, lançados por pessoas diferentes. É duplicidade real.
 
-## Estado da construção (camada 1)
-**Plano aprovado:** fluxo ponta a ponta feio com só 2 regras (troca bancária sem confirmação + duplicidade) e o motivo em **modo simulado** (sem chamar a IA). O painel tem 3 abas. As 3 vias, a alçada e a IA real ficam para a camada 2. Aprovar e Recusar e o Slack ficam para a camada 3. A config fica para a camada 4.
-
-**Arquivos (commit `885bc38`, tag `v1-demo`):**
-- `src/regras.py`: `normalizar_nf`, `troca_bancaria_sem_confirmacao` (janela de 30 dias até 02/11 08:00; só `confirmacao_registrada=sim` vale; só para ted/pix), `chave_duplicidade`, `avaliar(titulo)` e `validar_saida` (decisões `liberar | retirar | acionar`).
-- `src/coletor.py`: `montar_planilha_mae()` junta agenda + contas_a_pagar + fornecedores + alterações e calcula `nf_normalizada`, `troca_bancaria_suspeita` e `duplicado_de`. O original é o título já pago ou o primeiro lançado; só os agendados extras são marcados.
-- `src/solucao.py`: `resolver(titulo)` devolve `{decisao, regras_violadas, acionar, motivo}`. Dado faltando vira `acionar`.
-- `src/ia.py`: `escrever_motivo` simulado.
-
-- `src/guardiao.py`: `conferir(mae)` roda o `resolver` em toda a planilha. `python src/guardiao.py [lote]` imprime o resumo e as exceções.
-- `app.py`: painel Streamlit com 3 abas (planilha mãe, exceções, lote final) e filtro por lote. O padrão é `RM20261103-MER`.
-- `tests/test_regras.py`: 6 testes mínimos das regras.
-- `eval/casos.json`: 5 casos mínimos escritos pelo agente dev, **ainda sem gabarito do Mateus**.
-- `requirements.txt`; `dados/` no `.gitignore`.
-
+## Estado da construção (o que existe hoje)
 **Como rodar** (use o caminho completo do Python enquanto o terminal não reconhecer `python`):
 ```
-python src/guardiao.py RM20261103-MER
-python -m pytest -q
-python eval/run.py
-python -m streamlit run app.py      # http://localhost:8501
+python src/guardiao.py RM20261103-MER     # resumo no terminal
+python -m pytest -q                       # 26 testes
+python eval/run.py                        # 26 casos das regras
+python eval/run_emails.py                 # 30 e-mails da IA (usa o cache)
+python -m streamlit run app.py            # painel em http://localhost:8501
 ```
 
-**Resultado da camada 1 (o que o dev viu ao rodar):**
-| | Títulos | R$ |
-|---|---|---|
-| Fila inteira | 876 | 10.206.764,09 |
-| Seguem | 838 | 9.907.060,39 |
-| Retidos por troca bancária | 25 (todos da Embalarte FP4615) | 194.440,08 |
-| Retidos por duplicidade | 13 | 105.263,62 |
+**Arquivos principais**
+| Arquivo | O que faz |
+|---|---|
+| `src/coletor.py` | `montar_planilha_mae(com_ia=True)`: junta fila, títulos, fornecedores, alterações, NF, duplicata e caixa de e-mail. Calcula `nf_normalizada`, `troca_bancaria_suspeita`, `destino_anterior` (conta de antes da troca), `duplicado_de`, `valor_duplicata`, `nf_outro_fornecedor`, `raiz_beneficiario_boleto`, `fracionado_com` e `emails_suspeitos`. A caixa vai em `mae.attrs["caixa"]` |
+| `src/regras.py` | Regras em código, em ordem de prioridade: troca bancária sem confirmação; boleto com beneficiário de outra raiz; duplicidade (NF + parcela); fracionamento de alçada; NF de outro fornecedor ou sem NF no portal; valor ≠ duplicata (tolerância de R$ 0,10, com arredondamento para centavos). A evidência dos e-mails (`pedido_troca_por_email_suspeito`, `boleto_de_email_fora_do_cadastro`) **só reforça** uma regra que já disparou. `aprovacao_necessaria(valor)` devolve aprovador (> R$ 5 mil) ou PS03 (> R$ 50 mil): é **roteamento no lote, não retenção**, porque a aprovação é em lote no dia (ver `decisoes.md` [13:20]) |
+| `src/solucao.py` | `resolver(titulo)` → `{decisao, regras_violadas, acao, acionar, caso_id, motivo, aprovacao}` |
+| `src/guardiao.py` | `conferir(mae)`; `casos(df)`, com 1 acionamento por fornecedor + regra e PS03 quando o caso passa de R$ 50 mil; `alertas_caixa(df)`, com phishing → PS08 (jurídico) e tentativa de instruir o agente → PS01 |
+| `src/leitor_email.py` | Jev (`/v1/systemone`): 3 perguntas, schema validado, 2 tentativas, cache em `dados/cache_ia.json`. **O Cloudflare do proxy bloqueia o User-Agent padrão do Python (erro 1010): mande `User-Agent: guardiao-do-lote/1.0`** |
+| `src/emails.py` | Liga cada e-mail ao fornecedor (endereço ou domínio do cadastro, domínio parecido, nome, CNPJ) e define a suspeita pelo código |
+| `src/decisoes_humanas.py` | Decisões do painel, gravadas em `dados/decisoes_humanas.json`: "aprovar" a ação proposta ou "liberar mesmo assim". Reverter a conta e corrigir o valor **voltam ao lote**, com a conta anterior ou o valor da duplicata; cancelar e contatar o fornecedor **não voltam**. Casos sem `acionar` (dentro da alçada do analista) o agente resolve sozinho |
+| `app.py` | Painel Streamlit (ver abaixo). Tema em `.streamlit/config.toml`; logo oficial recortado do brandbook em `assets/logo-gogroup.png` e `assets/g-gogroup.png` |
+| `eval/casos.json` + `eval/run.py` | 26 casos das regras: 21 confirmados pelo Mateus, o par INV004 e 3 de evidência da IA |
+| `eval/gabarito_emails.csv` + `eval/run_emails.py` | 30 e-mails (25 da base e 5 inventados), confirmados pelo Mateus |
+| `tests/test_regras.py`, `tests/test_fila.py` | 26 testes, incluindo "a IA nunca libera o que as regras seguraram" e "a reversão paga na conta anterior" |
 
-- **Lote `RM20261103-MER`:** 192 títulos, 6 retidos: TP429865 Duraplast, TP430006 Maciez, TP430213 Cosmoderm, TP431502 e TP432024 Embalarte, TP431660 Polimax.
-- **Testes:** pytest 6/6 e eval 5/5.
+**Resultado atual na fila inteira (876 títulos, R$ 10.206.764,09):**
+- 827 seguem.
+- **49 ficam retidos (R$ 483.642,28), em 21 casos.**
+- 15 pessoas acionadas: 13 casos e 2 alertas da caixa.
+- Lote `RM20261103-MER`: 7 retidos em 6 casos, e 3 precisam de uma pessoa.
+- A IA não mudou nenhuma decisão, só acrescentou evidência.
+- A leitura dos 246 e-mails custou US$ 0,0059.
 
-## Verificação da camada 1 (11:10): respostas
-Detalhe completo em `projeto/decisoes.md` [11:10].
-1. **As 13 duplicidades são reais.** Sempre TED do portal × boleto do e-mail; nenhum refaturamento; nenhum original já pago.
-2. **Os 25 da Embalarte são TED para a conta nova.** Nenhum é boleto.
-3. **Nenhuma troca TED/pix escapou.** Escapou o boleto golpe (achado 9).
-4. **Nenhuma duplicidade escapou.** Escaparam os títulos no fornecedor errado (achado 8).
-5. **O código bate com a política**, com 4 exceções:
-   - duplicidade deveria **cancelar**, não retirar;
-   - Embalarte: reverter a alteração em vez de só retirar (~R$ 24,3 mil de atraso evitado);
-   - acionamento é feito por título, e deveria ser por caso;
-   - a troca bancária não confere `confirmacao_como`.
+**Painel atual (`app.py`, commit `97f4f07`):** uma página só, com rolagem.
+- Topo com o logo, a pílula "GUARDIÃO DO LOTE" e o status da IA.
+- Seletor de lote; o padrão é Meridiano 03/11 10:00.
+- Bloco azul "Próximo envio" e bloco limão "Precisa da sua decisão".
+- 4 cards de números.
+- Abas "Exceções" (cards por caso, com evidência e botões), "Caixa de e-mail", "Planilha mãe" e "Lote final" (com CSV).
 
-**A camada 1 deixa passar ~R$ 166 mil:** R$ 132,2 mil de zero a mais, R$ 22,3 mil para o fornecedor errado e R$ 11,7 mil do boleto golpe.
+O `dados/decisoes_humanas.json` foi apagado para a demo começar limpa.
 
-## Próximo passo: camada 1.1 (aprovado pelo Mateus, para implementar)
-Mesmo fluxo da camada 1, com plano curto antes de codar (regra do kit). Ordem sugerida:
+## Próximo passo: revisão visual do painel (pedido do Mateus às 14h20)
+O Mateus disse: "o site está até bom, mas precisa de uma revisão visual. É uma tela onepager. As informações monetárias devem ter um destaque maior. Tem muitas coisas cortadas ou mal feitas."
 
-1. **Coletor: juntar NF e duplicata.**
-   - Em `montar_planilha_mae`, junte `notas_fiscais.csv` pela chave (raiz do CNPJ do fornecedor do título = `cnpj_emitente[:8]`) + (`nf_normalizada` = `numero_nf` sem zeros à esquerda).
-   - Depois junte `nf_duplicatas.csv` por `chave_acesso` + `n_dup` = parcela n com 3 dígitos (`1/3` → `001`).
-   - Novas colunas: `chave_nf`, `valor_duplicata`, `cnpj_emitente_nf`.
-   - Testado: 872 de 874 títulos com NF casam. Os 2 que não casam são os do fornecedor errado.
-2. **Regra `valor_diferente_duplicata`:** `|valor − valor_duplicata| > 0,10`, lendo a tolerância de `politicas.csv` (`tres_vias.titulo_x_duplicata`). Pega os 11 títulos do achado 7.
-   - Ação: corrigir para o valor da duplicata. Até R$ 5 mil de diferença, o analista faz sozinho; acima, vai para o aprovador.
-   - Na camada 1.1, basta **retirar** e mostrar o valor correto no motivo.
-3. **Regra `nf_de_outro_fornecedor`:** NF digitada sem NF no portal para a raiz do fornecedor, mas com NF de mesmo número e mesmo valor para outro fornecedor. O motivo cita o fornecedor provável. Se não achar nenhuma NF, é `sem_nf_no_portal` e vai para `acionar`. Pega o TP431946 e o TP432337.
-4. **Regra `boleto_beneficiario_diferente`:** só para `forma_pagamento = boleto`; dispara se a raiz de `cnpj_beneficiario_boleto` ≠ raiz do CNPJ do fornecedor. Testado: 1 caso em 372 boletos (TP431754). Opcional: banco da linha digitável fora do conjunto {banco do cadastro + bancos de boletos já pagos do fornecedor}.
-5. **Ações e acionamento:**
-   - duplicidade passa a sugerir `cancelar_titulo`, não `retirar`;
-   - a Embalarte sugere `reverter_alteracao_cadastro`;
-   - acione **1 vez por (fornecedor, regra)**: uma coluna `caso_id` agrupa os títulos e o painel mostra 1 card por caso.
-6. **Testes e eval:** acrescentar os 6 furos como casos com resultado esperado. Hoje o eval dá 5/5 porque não cobre nenhum deles.
-   - TP431459, TP431775 e TP431754 → `retirar`;
-   - TP431946 → `retirar` (fornecedor errado);
-   - TP431762 + TP431763 (parcelas) → não são duplicidade entre si;
-   - um título limpo → `liberar`.
+Ele mandou **2 telas de referência** (prints de sistemas de gestão financeira), que mostram:
+- **menu lateral fixo à esquerda**, com fundo escuro, ícone e nome por item (Painel, Agenda, Pessoas, Produtos, Vendas, Financeiro...), o usuário no topo e cada seção numa tela própria;
+- **barra superior** com o título da tela ("Movimento Financeiro") e o usuário à direita;
+- **4 cards de KPI em linha**, cada um com um **bloco colorido de ícone** (verde, azul, laranja, vermelho) e, ao lado, o rótulo pequeno ("A Receber Hoje", "Pagtos em Atraso") e o **valor em R$ grande** ("R$ 3.275,00", "16.922,05");
+- **barra de ações e filtros** acima da tabela (Inserir, Excel, Relatórios, "Filtrar por Data Vencimento / Este mês");
+- **tabela compacta e alinhada**, com categoria, vencimento, descrição, pessoa, valor alinhado à direita, selo vermelho "Vencido", ações por linha e paginação ("Página 4 de 7").
 
-**Resultado esperado depois da 1.1, na fila inteira:** **49 títulos retidos**: os 38 de hoje + 8 novos por valor (11 menos os 3 que já são duplicidade) + 2 fornecedores errados + 1 boleto golpe. Lote `RM20261103-MER`: 7 retidos (os 6 de hoje + TP431754). Confira se a contagem bate; se não bater, investigue antes de seguir.
+**O que corrigir** (o que o agente dev viu no painel atual):
+- o título do bloco azul quebra em 2 linhas ("…fecha às / 10:00");
+- há colunas cortadas nas tabelas: o fornecedor aparece como "Embalarte Indústria e Comércio de Embalag…" e a coluna "Observação" fica cortada;
+- as abas parecem botões quadrados, e não pílulas;
+- os valores em R$ dos cards são pequenos e cinza, mas o destaque precisa ser **o dinheiro**;
+- tudo fica numa página só, com muita rolagem.
 
-Depois: commit `feat: camada 1.1 (título x duplicata, fornecedor errado, beneficiário do boleto)` e, então, `/testes` com o gabarito do Mateus.
+**Direção proposta.** Manter o brandbook: azul `#2659a5` como protagonista, Poppins, pílulas, cantos arredondados, logo sem alterações e o nome sempre "Gogroup".
+1. **Menu lateral** com `st.sidebar`: logo no topo, seletor de lote e os itens Painel, Exceções, Caixa de e-mail, Planilha mãe e Lote final (um `st.radio` estilizado). Cada item é uma tela, sem rolagem longa.
+2. **Barra superior** com o título da tela, o lote, o horário de fechamento e o status da IA.
+3. **Cards de KPI como nas referências.** Bloco de ícone colorido com a paleta da marca: azul = vai ao banco; vermelho `#e5273c` = retido por suspeita; amarelo `#f8ae13` = precisa de decisão; azul-claro `#3dbfef` = pessoas acionadas. **Valor em R$ com 1,9–2,2rem e peso 800.**
+4. **Na tela Painel**, ao lado dos KPIs: "Dinheiro protegido por tipo de problema" (R$ por regra) e "Próximos fechamentos" (lote, hora, R$ e retidos).
+5. **Tabelas sem cortes:** larguras com `st.column_config` (Fornecedor "large", R$ alinhado à direita), ou tabela HTML própria com quebra de linha nas telas com poucas linhas.
+6. **Conferir no navegador** em 1366 e 1920 px e com o tema escuro do navegador (o `config.toml` já força o tema claro).
+7. **Lembrete:** o Streamlit quebra o `<style>` quando há linhas em branco; mantenha o CSS sem linhas vazias.
+
+**Depois:** o `/pitch` (03-pitch, 04-submissao com contagem de caracteres, 05-relatorio e README), usando os números de `decisoes.md` e de `eval/antes_depois.csv`.
 
 ## Ambiente
-- **Repositório:** `https://github.com/alanmateuz/Desafio-Gohacks`, branch `main`. O histórico começa em 07/11/2026. O Mateus não quer nenhum commit com data anterior a isso.
+- **Repositório:** `https://github.com/alanmateuz/Desafio-Gohacks`, branch `main`. O histórico começa em 07/11/2026, e o Mateus não quer nenhum commit com data anterior a isso. Rode `git pull` antes de codar.
 - **Identidade git** configurada só neste repositório: alanmateuz / alanmateusqueiroz@gmail.com.
-- **GitHub:** a camada 1 (`885bc38`) e a verificação (11:10, docs) estão em `main`. **Antes de codar, rode `git pull`.** Envie a tag com `git push --tags` se ela ainda não estiver no remoto.
-- **Python 3.12.10 instalado** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. Dependências (pandas, streamlit, pytest, anthropic) instaladas e testadas. O Mateus também vai instalar o Node, mas ele não é usado na stack.
-- **API do Claude liberada no evento.** A chave vai no `.env` (`LLM_API_KEY`, `LLM_MODEL=claude-sonnet-5-5`), nunca no código. Sem chave, use o modo simulado.
-- **`dados/` está fora do git.** Decidir se entra no repositório (cerca de 11 MB, dados fictícios) ou no `.gitignore`.
+- **Python 3.12.10** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. As dependências estão em `requirements.txt` (pandas, streamlit, pytest, anthropic, openai, python-dotenv) e já foram instaladas.
+- **IA:** AI Proxy do evento. O token `gw-tok-...` fica no `.env` (`AI_PROXY_API_KEY`), que está fora do git. O modelo de chat é `AI_PROXY_MODEL=latest`. Sem token, o guardião roda em modo simulado. Nunca imprima o token. **DeepSeek é proibido no evento.**
+- **`dados/` está fora do git:** as bases do evento, o `cache_ia.json` e o `decisoes_humanas.json`. Em outra máquina, baixe as bases do Drive para `dados/`.
+- **Brandbook:** `C:\Users\Notebook\Downloads\[Gohacks Talent] Brandbook Gogroup.pptx`.
+  - Paleta: `#2659a5` (principal), `#d7d900`, `#e61782`, `#e5381a`, `#e5273c`, `#f8ae13`, `#3dbfef` e branco.
+  - Fonte: Poppins.
+  - Não pôr texto branco sobre amarelo ou verde; não combinar laranja, vermelho e rosa.
+- **Horário:** o código congela às 15h30, e a submissão fecha às 16h30.
