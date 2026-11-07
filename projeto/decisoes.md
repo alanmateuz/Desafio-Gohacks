@@ -27,3 +27,9 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Por quê:** as dores 1 (troca bancária fraudulenta, score 100) e 2 (duplicidade, score 92) são as maiores em R$ e acontecem no mesmo momento (título na fila antes do fechamento), junto com as 3 vias e a alçada.
 - **Descartei:** para a prova de conceito, ficaram fora a triagem de e-mails, a conciliação de extrato e a auditoria de login. Viram próximos passos da visão 360°.
 - **IA errou?** O agente escreveu a frase do problema; o Mateus reescreveu com as próprias palavras, mais focadas em volume e golpe.
+
+### [11:00] Desenho da solução: Guardião do lote com painel
+- **Decisão:** a solução junta as fontes espalhadas (ERP, Compras, NF-e, DDA, bancos, e-mail) numa **planilha mãe**. As regras em código conferem cada título, o que está limpo vai para a **planilha final do lote** que o Marcos assina, e as exceções saem do lote e vão para a pessoa certa. Tudo acontece num **painel** (planilha mãe, exceções, lote final), e outras telas serão pensadas depois.
+- **Por quê:** era a ideia do Mateus. O agente propôs que a IA só leia e-mails e boletos e escreva o motivo, enquanto a decisão de liberar fica com o código ou a pessoa (código para regra, IA para linguagem, humano para a palavra final).
+- **Descartei:** "automatizar lançamentos" no sentido de lançar títulos a partir do XML. O Mateus esclareceu que quis dizer coletar das fontes e montar a planilha final. Descartei também a IA decidindo sozinha.
+- **IA errou?** O agente entendeu "lançamentos" como lançar títulos no ERP. O Mateus corrigiu: era a coleta das plataformas até a planilha final.
