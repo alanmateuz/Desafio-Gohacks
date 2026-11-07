@@ -83,7 +83,7 @@ table.t .sec{ color:var(--texto-2); font-size:.78rem; }
   background:var(--azul); color:#fff; border-radius:14px; padding:14px 18px; margin-bottom:14px; }
 .barra-total .r{ font-size:.82rem; opacity:.9; } .barra-total .v{ font-size:1.6rem; font-weight:800; font-variant-numeric:tabular-nums; }
 .vazio{ text-align:center; padding:30px; color:var(--texto-2); }
-div[data-testid="stSegmentedControl"] button, div[data-testid="stButtonGroup"] button{ border-radius:999px !important; font-weight:600; }
+div[data-testid="stButtonGroup"] button{ font-weight:600; }
 .stButton button{ border-radius:999px; font-weight:600; white-space:nowrap; }
 .stButton button[kind="primary"]{ background:var(--rosa); border-color:var(--rosa); color:#fff; }
 .stButton button[kind="primary"]:hover{ background:#c4116d; border-color:#c4116d; color:#fff; }
@@ -92,12 +92,12 @@ div[data-testid="stSegmentedControl"] button, div[data-testid="stButtonGroup"] b
 div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font-size:.78rem; color:var(--texto-2); }
 .block-container{ padding:2.6rem 2.4rem 4rem !important; max-width:1280px; }
 .marca{ text-align:right; line-height:1.15; }
-.marca .prod{ font-weight:800; font-size:1.55rem; color:var(--texto); letter-spacing:-.01em; }
+.marca .prod{ font-weight:800; font-size:clamp(1.05rem, 1.9vw, 1.55rem); white-space:nowrap; color:var(--texto); letter-spacing:-.01em; }
 .marca img{ height:20px; margin-top:4px; }
 .marca .ia{ margin-top:8px; }
 .st-key-lote label p{ font-size:.85rem !important; color:var(--texto-2) !important; font-weight:500; }
 .st-key-lote [role="group"]{ width:fit-content !important; max-width:100%; gap:6px; border:none !important; background:transparent !important; box-shadow:none !important; padding-left:0 !important; }
-.st-key-lote input{ font-size:clamp(1.25rem,2.4vw,1.75rem) !important; font-weight:700 !important; color:var(--texto) !important; padding-left:0 !important; height:auto !important; cursor:pointer; field-sizing:content; min-width:12ch; }
+.st-key-lote input{ font-size:clamp(1.1rem,2.2vw,1.75rem) !important; font-weight:700 !important; color:var(--texto) !important; padding-left:0 !important; height:auto !important; cursor:pointer; field-sizing:content; min-width:12ch; }
 .st-key-lote button svg{ width:30px !important; height:30px !important; color:var(--texto-2); }
 .st-key-lote [role="group"]:focus-within{ outline:2px solid var(--azul-claro); outline-offset:4px; border-radius:10px; }
 .subtitulo{ color:var(--texto-2); font-size:.9rem; margin:-4px 0 0; }
@@ -111,12 +111,13 @@ div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font
 .kpi .ic svg{ width:18px; height:18px; }
 .kpi .val{ color:var(--texto); font-size:clamp(1.3rem, 1.9vw, 1.9rem); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .kpi .det{ color:var(--texto-2); font-size:.8rem; margin-top:4px; }
-.st-key-secao [data-testid="stButtonGroup"]{ border-bottom:2px solid var(--borda); gap:0; flex-wrap:wrap; border-radius:0 !important; }
-.st-key-secao [data-testid="stButtonGroup"] > div{ gap:0 !important; }
+.st-key-secao, .st-key-secao [data-testid="stButtonGroup"]{ width:100% !important; }
+.st-key-secao [role="radiogroup"]{ display:flex; gap:32px; width:100%; border-bottom:1px solid var(--borda); flex-wrap:wrap; }
 .st-key-secao button{ border:none !important; border-radius:0 !important; background:transparent !important; color:var(--texto-2) !important;
-  font-weight:500 !important; font-size:1rem !important; padding:10px 4px 12px !important; margin:0 28px -2px 0 !important; box-shadow:none !important; }
-.st-key-secao button[aria-checked="true"]{ color:var(--azul) !important; font-weight:600 !important;
-  border-bottom:2px solid var(--azul) !important; }
+  font-weight:500 !important; padding:8px 0 12px !important; margin:0 0 -1px 0 !important; box-shadow:none !important; min-height:auto !important; }
+.st-key-secao button:hover{ color:var(--texto) !important; }
+.st-key-secao button[aria-checked="true"]{ color:var(--azul) !important; font-weight:600 !important; box-shadow:inset 0 -3px 0 var(--azul) !important; }
+.st-key-secao button:focus-visible{ outline:2px solid var(--azul-claro) !important; outline-offset:2px; }
 .st-key-secao button p{ font-size:1rem !important; }
 .secao-espaco{ height:26px; }
 </style>
@@ -211,7 +212,7 @@ def nome_lote(l: str) -> str:
 # ---------- Cabeçalho: o lote é o título (e o seletor); a marca fica à direita
 logo_b64 = __import__("base64").b64encode((RAIZ / "assets/logo-gogroup.png").read_bytes()).decode()
 cor_ia, txt_ia = ("#1d9e75", "IA ativa · Jev") if TOKEN else ("#f8ae13", "IA em modo simulado")
-c1, c2 = st.columns([3, 1], vertical_alignment="top")
+c1, c2 = st.columns([4, 1.1], vertical_alignment="top")
 with c1:
     escolha = st.selectbox("Lote de remessa", ["fila"] + lotes, index=1, format_func=nome_lote, key="lote")
 with c2:
