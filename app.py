@@ -123,6 +123,12 @@ div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font
 .st-key-secao button:focus-visible{ outline:2px solid var(--azul-claro) !important; outline-offset:2px; }
 .st-key-secao button p{ font-size:1rem !important; }
 .secao-espaco{ height:26px; }
+[data-testid="stTextInputRootElement"], [data-testid="stTextInputRootElement"] input, [data-testid="stTextArea"] textarea,
+[data-testid="stMultiSelect"] [role="group"], [data-testid="stSelectbox"] [role="group"]{ background:var(--branco) !important; }
+[data-testid="stTextInputRootElement"], [data-testid="stTextArea"] textarea, [data-testid="stMultiSelect"] [role="group"],
+[data-testid="stSelectbox"] [role="group"]{ border:1px solid #d5dbe4 !important; }
+[data-testid="stTextInputRootElement"]:focus-within, [data-testid="stMultiSelect"] [role="group"]:focus-within{ border-color:var(--azul) !important; }
+.st-key-lote [role="group"]{ background:transparent !important; border:none !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -436,7 +442,7 @@ elif vista == "Caixa de e-mail":
         sus = caixa[caixa.suspeita != ""]
         st.markdown('<div class="kpis">'
                     + kpi("banco", "#2659a5", "E-mails lidos pela IA", str(len(caixa)), "01/10 a 02/11")
-                    + kpi("escudo", "#e5273c", "Suspeitos (regra do código)", str(len(sus)), "domínio ou remetente")
+                    + kpi("escudo", "#e5273c", "Suspeitos", str(len(sus)), "pela regra do código")
                     + kpi("alerta", "#f8ae13", "Em revisão humana", str(int(caixa.revisar_ia.sum())), "confiança abaixo de 0,7")
                     + kpi("pessoa", "#3dbfef", "Custo da 1ª leitura", "US$ 0,0059", "depois fica em cache")
                     + "</div>", unsafe_allow_html=True)
