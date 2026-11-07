@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="GoGuardian: o agente que confere cada pagamento antes de o dinheiro sair">
+  <rect width="1200" height="300" rx="28" fill="#2659a5"/>
+  <circle cx="72" cy="62" r="9" fill="#d7d900"/>
+  <circle cx="100" cy="62" r="9" fill="#d7d900"/>
+  <circle cx="128" cy="62" r="9" fill="#d7d900"/>
+  <text x="64" y="168" font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-size="88" font-weight="800" fill="#ffffff" letter-spacing="-2">GoGuardian</text>
+  <text x="66" y="222" font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-size="30" fill="#dfe8f6">O agente que confere cada pagamento antes de o dinheiro sair.</text>
+  <rect x="890" y="44" width="250" height="44" rx="22" fill="#d7d900"/>
+  <text x="1015" y="73" text-anchor="middle" font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#10284d" letter-spacing="1.5">DESAFIO · PAGAMENTOS</text>
+  <text x="1140" y="262" text-anchor="end" font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-size="18" fill="#dfe8f6">GoHacks Talent 2026</text>
+</svg>

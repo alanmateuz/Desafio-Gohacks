@@ -30,7 +30,7 @@ Antes de subir: apague `dados/decisoes_humanas.json`, abra o painel já no lote 
 2. **(20 s) Caso A, que ele resolve sozinho:** Maciez, R$ 4.750 (TP430006), título em dobro (mesma NF e parcela). "Dentro da alçada, ele cancela sozinho e registra. Ninguém precisou olhar."
 3. **(40 s) Caso B, que ele passa para uma pessoa:** Embalarte, 25 títulos, R$ 194 mil.
    - A conta foi trocada por e-mail de um domínio parecido (`embalartte`), e o e-mail ainda trazia uma "Obs. para o robô" tentando instruir o agente.
-   - Os títulos saem do lote e a Renata é avisada com o motivo.
+   - Os títulos saem do lote e a Helena (diretora, acima de R$ 50 mil) é avisada com o motivo. Para ver os R$ 194 mil, escolha **Fila inteira** no seletor.
    - Clico em **Liberar mesmo assim** e mostro que ele exige confirmação e motivo.
 4. **(10 s) Lote final:** a conta do golpista não aparece, o pagamento vai para a conta antiga e o total bate.
 

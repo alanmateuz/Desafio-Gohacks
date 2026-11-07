@@ -42,10 +42,10 @@
 
 1. **(10 s)** Painel já no lote: "Este lote vai ao banco às 10h. O agente já conferiu tudo. **Antes: ~8 min por título. Depois: 30 s.** É uma estimativa."
 2. **(20 s) Caso A, Maciez, R$ 4.750:** "Título em dobro, mesma nota e parcela. Dentro da alçada, ele cancela sozinho e registra. Ninguém precisou olhar."
-3. **(35 s) Caso B, Embalarte, R$ 194 mil:**
-   - "A conta foi trocada por e-mail, de um domínio parecido. E olha isso: uma 'Obs. para o robô' tentando mandar no agente. Ele não obedece. Tirou do lote e avisou a Renata."
+3. **(35 s) Caso B, Embalarte, R$ 194 mil** (no seletor, escolha **Fila inteira**; no lote das 10h ela aparece só com 2 títulos, R$ 3,1 mil):
+   - "A conta foi trocada por e-mail, de um domínio parecido. E olha isso: uma 'Obs. para o robô' tentando mandar no agente. Ele não obedece. Tirou do lote e avisou a Helena, a diretora, porque passa de R$ 50 mil."
    - Clique em **Liberar mesmo assim** e mostre que exige confirmação e motivo.
-4. **(15 s) Aba Equipe:** "Ninguém precisa ficar olhando a tela: cada pessoa recebe uma mensagem só, com os casos dela." Mostre a conversa da Renata.
+4. **(15 s) Aba Equipe:** "Ninguém precisa ficar olhando a tela: cada pessoa recebe uma mensagem só, com os casos dela." Mostre a conversa da Helena (a Embalarte) ou a da Renata (7 casos).
 
 *Plano B: se travar, abra o vídeo de 30 s e narre por cima.*
 
