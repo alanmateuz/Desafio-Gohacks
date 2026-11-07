@@ -157,6 +157,6 @@ Depois, o `/testes` (agente avaliador) monta o gabarito com o Mateus.
 - **Repositório:** `https://github.com/alanmateuz/Desafio-Gohacks`, branch `main`. O histórico começa em 07/11/2026. O Mateus não quer nenhum commit com data anterior a isso.
 - **Identidade git** configurada só neste repositório: alanmateuz / alanmateusqueiroz@gmail.com.
 - **Commits locais ainda não enviados:** `d733298`, `7829c9e` e `5553d75` (mapa de dores, problema, solução) e o desta atualização. O que veio antes já está no GitHub.
-- **Python 3.12.10 instalado** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. As dependências (pandas, streamlit, pytest, anthropic) foram instaladas com `pip`. O Mateus também vai instalar o Node, mas ele não é usado na stack.
+- **Python 3.12.10 instalado** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. A instalação das dependências (pandas, streamlit, pytest, anthropic) com `pip` estava em andamento às 11h20; confira com `python -c "import pandas, streamlit, pytest, anthropic"`. O Mateus também vai instalar o Node, mas ele não é usado na stack.
 - **API do Claude liberada no evento.** A chave vai no `.env` (`LLM_API_KEY`, `LLM_MODEL=claude-sonnet-5-5`), nunca no código. Sem chave, use o modo simulado.
 - **`dados/` está fora do git.** Decidir se entra no repositório (cerca de 11 MB, dados fictícios) ou no `.gitignore`.
