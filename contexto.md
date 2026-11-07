@@ -1,6 +1,6 @@
 # Contexto do projeto (handoff para outro Claude)
 
-Atualizado em 07/11/2026, ~11h20. Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
+Atualizado em 07/11/2026, ~11h50. Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
 
 ## Quem e o quê
 - **Mateus** (git: `alanmateuz`) participa do **GoHacks Talent**, um hackathon individual de 1 dia. A construção vai das 9h40 às 16h30, o código congela às 15h30 e a submissão fecha às 16h30.
@@ -14,8 +14,9 @@ Atualizado em 07/11/2026, ~11h20. Leia junto com o `CLAUDE.md`, que tem as regra
 | Descoberta | ⚠️ As perguntas para o mentor foram escritas (Parte 2), mas **o cenário mudou** (ver abaixo). A fonte agora são as bases em `dados/`, não o mentor. |
 | Problema | ✅ Aprovado (Parte 3 de `01-problema.md`). Tem o mapa de dores com score, a frase, o usuário, a hipótese, o experimento, as métricas, o escopo e 8 critérios de aceite. |
 | Solução | ✅ Aprovada (`02-solucao.md`). Guardião do lote com planilha mãe e painel. |
-| Construir | 🔨 **Camada 1 em andamento, com código parcial e sem commit.** Ver "Estado da construção". |
-| Testes, pitch | ⏳ |
+| Construir | ✅ **Camada 1 pronta**: commit `885bc38`, tag `v1-demo`. Ver "Estado da construção". |
+| Testes | 🔎 **Próximo passo: verificar a camada 1** (ver "O que verificar"). Depois vem o `/testes` com o gabarito do Mateus. |
+| Pitch | ⏳ |
 
 ### Problema aprovado
 - **Frase do Mateus:** "O volume de pagamentos é tão grande que o processo vira manual e impossível de revisar, abrindo espaço para golpes e perda de dinheiro."
@@ -137,26 +138,50 @@ Atenção ao formato:
 ## Estado da construção (camada 1)
 **Plano aprovado:** fluxo ponta a ponta feio com só 2 regras (troca bancária sem confirmação + duplicidade) e o motivo em **modo simulado** (sem chamar a IA). O painel tem 3 abas. As 3 vias, a alçada e a IA real ficam para a camada 2. Aprovar e Recusar e o Slack ficam para a camada 3. A config fica para a camada 4.
 
-**Já escrito (sem commit):**
+**Arquivos (commit `885bc38`, tag `v1-demo`):**
 - `src/regras.py`: `normalizar_nf`, `troca_bancaria_sem_confirmacao` (janela de 30 dias até 02/11 08:00; só `confirmacao_registrada=sim` vale; só para ted/pix), `chave_duplicidade`, `avaliar(titulo)` e `validar_saida` (decisões `liberar | retirar | acionar`).
 - `src/coletor.py`: `montar_planilha_mae()` junta agenda + contas_a_pagar + fornecedores + alterações e calcula `nf_normalizada`, `troca_bancaria_suspeita` e `duplicado_de`. O original é o título já pago ou o primeiro lançado; só os agendados extras são marcados.
 - `src/solucao.py`: `resolver(titulo)` devolve `{decisao, regras_violadas, acionar, motivo}`. Dado faltando vira `acionar`.
 - `src/ia.py`: `escrever_motivo` simulado.
 
-**Falta na camada 1:**
-1. `src/guardiao.py`: roda `resolver` em toda a planilha mãe e imprime o resumo por decisão e por regra, mais as exceções. Aceita filtro por lote.
-2. `app.py`: painel Streamlit com as abas planilha mãe, exceções e lote final.
-3. `requirements.txt` (pandas, streamlit, pytest, anthropic) e `dados/` no `.gitignore`.
-4. Adaptar `tests/test_regras.py` e `eval/casos.json`, que ainda usam as funções de exemplo do kit (`tem_termo_proibido`, que foi removida) e vão quebrar.
-5. Rodar no lote `RM20261103-MER` e conferir: os títulos da Embalarte (TP431502, TP432024) saem; da Maciez, o TP430006 sai e o TP429834 segue.
-6. Commit `feat:` e `git tag v1-demo`.
+- `src/guardiao.py`: `conferir(mae)` roda o `resolver` em toda a planilha. `python src/guardiao.py [lote]` imprime o resumo e as exceções.
+- `app.py`: painel Streamlit com 3 abas (planilha mãe, exceções, lote final) e filtro por lote. O padrão é `RM20261103-MER`.
+- `tests/test_regras.py`: 6 testes mínimos das regras.
+- `eval/casos.json`: 5 casos mínimos escritos pelo agente dev, **ainda sem gabarito do Mateus**.
+- `requirements.txt`; `dados/` no `.gitignore`.
 
-Depois, o `/testes` (agente avaliador) monta o gabarito com o Mateus.
+**Como rodar** (use o caminho completo do Python enquanto o terminal não reconhecer `python`):
+```
+python src/guardiao.py RM20261103-MER
+python -m pytest -q
+python eval/run.py
+python -m streamlit run app.py      # http://localhost:8501
+```
+
+**Resultado da camada 1 (o que o dev viu ao rodar):**
+| | Títulos | R$ |
+|---|---|---|
+| Fila inteira | 876 | 10.206.764,09 |
+| Seguem | 838 | 9.907.060,39 |
+| Retidos por troca bancária | 25 (todos da Embalarte FP4615) | 194.440,08 |
+| Retidos por duplicidade | 13 | 105.263,62 |
+
+- **Lote `RM20261103-MER`:** 192 títulos, 6 retidos: TP429865 Duraplast, TP430006 Maciez, TP430213 Cosmoderm, TP431502 e TP432024 Embalarte, TP431660 Polimax.
+- **Testes:** pytest 6/6 e eval 5/5.
+
+## O que verificar (pedido do Mateus)
+1. **Os 13 casos de duplicidade são reais?** Para cada um, confira em `contas_a_pagar.csv` se o par é mesmo a mesma NF e parcela e se não é refaturamento legítimo, e confira o valor da duplicata em `nf_duplicatas.csv`. Atenção aos casos em que o original já está `pago`.
+2. **Os 25 da Embalarte:** todos pagam por TED para a conta nova (905/0001/4471203-9)? Algum é boleto e deveria seguir?
+3. **Falsos negativos:** há troca bancária suspeita que a regra deixou passar? Exemplos: confirmação registrada para um telefone trocado há menos de 30 dias, ou `chave_pix` alterada com pagamento via pix.
+4. **Duplicidade que escapou:** a mesma NF lançada com fornecedor_id diferente (o lançador escolheu o fornecedor errado) ou a NF digitada com outro formato não coberto por `normalizar_nf`.
+5. **Revisão do código:** `src/regras.py` e `src/coletor.py` (as regras batem com `dados/parametros.md` e `politicas.csv`?).
+
+Regra do kit: o avaliador **aponta o erro, nunca corrige**. Registre o que achar no `projeto/decisoes.md`.
 
 ## Ambiente
 - **Repositório:** `https://github.com/alanmateuz/Desafio-Gohacks`, branch `main`. O histórico começa em 07/11/2026. O Mateus não quer nenhum commit com data anterior a isso.
 - **Identidade git** configurada só neste repositório: alanmateuz / alanmateusqueiroz@gmail.com.
-- **Commits locais ainda não enviados:** `d733298`, `7829c9e` e `5553d75` (mapa de dores, problema, solução) e o desta atualização. O que veio antes já está no GitHub.
-- **Python 3.12.10 instalado** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. A instalação das dependências (pandas, streamlit, pytest, anthropic) com `pip` estava em andamento às 11h20; confira com `python -c "import pandas, streamlit, pytest, anthropic"`. O Mateus também vai instalar o Node, mas ele não é usado na stack.
+- **Commits locais ainda não enviados ao GitHub:** tudo depois de `059ad94` (problema, solução, camada 1 `885bc38` + tag `v1-demo` e este contexto). Envie com `git push && git push --tags` quando o Mateus pedir.
+- **Python 3.12.10 instalado** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. Dependências (pandas, streamlit, pytest, anthropic) instaladas e testadas. O Mateus também vai instalar o Node, mas ele não é usado na stack.
 - **API do Claude liberada no evento.** A chave vai no `.env` (`LLM_API_KEY`, `LLM_MODEL=claude-sonnet-5-5`), nunca no código. Sem chave, use o modo simulado.
 - **`dados/` está fora do git.** Decidir se entra no repositório (cerca de 11 MB, dados fictícios) ou no `.gitignore`.
