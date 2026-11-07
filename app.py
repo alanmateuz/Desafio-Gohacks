@@ -28,7 +28,6 @@ html, body, .stApp, .stApp *:not([data-testid="stIconMaterial"]):not(.material-s
   font-family:'Poppins', sans-serif !important; }
 .stApp{ background:var(--fundo); color:var(--texto); }
 #MainMenu, footer, header[data-testid="stHeader"], [data-testid="stSidebarCollapsedControl"]{ display:none; }
-.block-container{ padding:0 2rem 3rem; max-width:1320px; }
 .barra{ background:var(--branco); border-bottom:1px solid var(--borda); margin:0 -2rem 0; padding:14px 2rem;
   display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
 .barra img{ height:30px; display:block; }
@@ -91,6 +90,35 @@ div[data-testid="stSegmentedControl"] button, div[data-testid="stButtonGroup"] b
 .stButton button:focus-visible{ outline:3px solid var(--azul-claro); outline-offset:2px; }
 .stDownloadButton button{ border-radius:999px; font-weight:600; background:#fff; color:var(--azul); border:1px solid var(--azul); }
 div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font-size:.78rem; color:var(--texto-2); }
+.block-container{ padding:2.6rem 2.4rem 4rem !important; max-width:1280px; }
+.marca{ text-align:right; line-height:1.15; }
+.marca .prod{ font-weight:800; font-size:1.55rem; color:var(--texto); letter-spacing:-.01em; }
+.marca img{ height:20px; margin-top:4px; }
+.marca .ia{ margin-top:8px; }
+.st-key-lote label p{ font-size:.85rem !important; color:var(--texto-2) !important; font-weight:500; }
+.st-key-lote [role="group"]{ width:fit-content !important; max-width:100%; gap:6px; border:none !important; background:transparent !important; box-shadow:none !important; padding-left:0 !important; }
+.st-key-lote input{ font-size:clamp(1.25rem,2.4vw,1.75rem) !important; font-weight:700 !important; color:var(--texto) !important; padding-left:0 !important; height:auto !important; cursor:pointer; field-sizing:content; min-width:12ch; }
+.st-key-lote button svg{ width:30px !important; height:30px !important; color:var(--texto-2); }
+.st-key-lote [role="group"]:focus-within{ outline:2px solid var(--azul-claro); outline-offset:4px; border-radius:10px; }
+.subtitulo{ color:var(--texto-2); font-size:.9rem; margin:-4px 0 0; }
+.kpis{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:20px; margin:34px 0 38px; }
+@media (max-width:1000px){ .kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+.kpi{ background:var(--branco); border:1px solid var(--borda); border-radius:22px; padding:20px 22px 22px; min-height:132px; align-items:stretch !important; text-align:left;
+  display:flex; flex-direction:column; justify-content:space-between; gap:10px; box-shadow:0 1px 2px rgba(16,24,40,.05); min-width:0; }
+.kpi .topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.kpi .rot{ color:var(--texto); font-size:.95rem; font-weight:500; }
+.kpi .ic{ width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex:0 0 34px; }
+.kpi .ic svg{ width:18px; height:18px; }
+.kpi .val{ color:var(--texto); font-size:clamp(1.3rem, 1.9vw, 1.9rem); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.kpi .det{ color:var(--texto-2); font-size:.8rem; margin-top:4px; }
+.st-key-secao [data-testid="stButtonGroup"]{ border-bottom:2px solid var(--borda); gap:0; flex-wrap:wrap; border-radius:0 !important; }
+.st-key-secao [data-testid="stButtonGroup"] > div{ gap:0 !important; }
+.st-key-secao button{ border:none !important; border-radius:0 !important; background:transparent !important; color:var(--texto-2) !important;
+  font-weight:500 !important; font-size:1rem !important; padding:10px 4px 12px !important; margin:0 28px -2px 0 !important; box-shadow:none !important; }
+.st-key-secao button[aria-checked="true"]{ color:var(--azul) !important; font-weight:600 !important;
+  border-bottom:2px solid var(--azul) !important; }
+.st-key-secao button p{ font-size:1rem !important; }
+.secao-espaco{ height:26px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,11 +140,11 @@ ICONES = {  # ícones simples, brancos, decorativos (aria-hidden)
 
 
 def kpi(icone: str, cor: str, rotulo: str, valor: str, detalhe: str) -> str:
-    svg = (f'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" '
+    svg = (f'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" '
            f'stroke-linejoin="round" aria-hidden="true">{ICONES[icone]}</svg>')
-    return (f'<div class="kpi"><div class="ic" style="background:{cor}">{svg}</div><div class="txt">'
-            f'<div class="rot">{e(rotulo)}</div><div class="val">{e(valor)}</div><div class="det">{e(detalhe)}</div>'
-            f'</div></div>')
+    return (f'<div class="kpi"><div class="topo"><div class="rot">{e(rotulo)}</div>'
+            f'<div class="ic" style="background:{cor}">{svg}</div></div>'
+            f'<div><div class="val">{e(valor)}</div><div class="det">{e(detalhe)}</div></div></div>')
 
 
 def tabela(linhas: list[dict], colunas: list[tuple], altura: int = 560) -> str:
@@ -180,19 +208,17 @@ def nome_lote(l: str) -> str:
     return f"{r.banco_pagador} · {pd.to_datetime(r.data_prevista).strftime('%d/%m')} · fecha às {r.horario_fechamento}"
 
 
-# ---------- Barra superior (logo + lote + status da IA)
+# ---------- Cabeçalho: o lote é o título (e o seletor); a marca fica à direita
 logo_b64 = __import__("base64").b64encode((RAIZ / "assets/logo-gogroup.png").read_bytes()).decode()
 cor_ia, txt_ia = ("#1d9e75", "IA ativa · Jev") if TOKEN else ("#f8ae13", "IA em modo simulado")
-st.markdown(f"""<div class="barra"><div style="display:flex;align-items:center;gap:16px">
-  <img src="data:image/png;base64,{logo_b64}" alt="Gogroup"><span class="pilula">Guardião do lote</span></div>
-  <div class="dir">Contas a pagar · referência 02/11/2026 08:00
-  <span class="chip"><span class="ponto" style="background:{cor_ia}"></span>{txt_ia}</span></div></div>""",
-            unsafe_allow_html=True)
-
-# ---------- Cabeçalho da tela + seletor de lote
-c1, c2 = st.columns([2.6, 1.4], vertical_alignment="bottom")
+c1, c2 = st.columns([3, 1], vertical_alignment="top")
+with c1:
+    escolha = st.selectbox("Lote de remessa", ["fila"] + lotes, index=1, format_func=nome_lote, key="lote")
 with c2:
-    escolha = st.selectbox("Lote de remessa", ["fila"] + lotes, index=1, format_func=nome_curto)
+    st.markdown(f"""<div class="marca"><div class="prod">GoGuardian</div>
+      <img src="data:image/png;base64,{logo_b64}" alt="Gogroup">
+      <div class="ia"><span class="chip"><span class="ponto" style="background:{cor_ia}"></span>{txt_ia}</span></div></div>""",
+                unsafe_allow_html=True)
 vis = df if escolha == "fila" else df[df.lote_remessa == escolha]
 cs = casos(vis)
 
@@ -223,11 +249,9 @@ al_vis = alertas if escolha == "fila" else alertas.iloc[0:0]
 alertas_pend = [a for a in al_vis.itertuples() if f"alerta:{a.alerta}:{a.fornecedor}" not in decisoes] if len(al_vis) else []
 n_pend = len(pendentes) + len(alertas_pend)
 
-with c1:
-    st.markdown(f"""<div class="cabeca" style="margin-bottom:0"><div><h1>{e(nome_lote(escolha))}</h1>
-      <div class="sub">{len(vis)} títulos conferidos antes do envio · <span style="white-space:nowrap">{brl(vis.valor.sum())}</span> na fila</div></div></div>""",
-                unsafe_allow_html=True)
-st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+st.markdown(f'<div class="subtitulo">{len(vis)} títulos conferidos antes do envio ao banco · '
+            f'<span style="white-space:nowrap">{brl(vis.valor.sum())}</span> na fila · referência 02/11/2026 08:00</div>',
+            unsafe_allow_html=True)
 
 # ---------- KPIs (o dinheiro em destaque)
 st.markdown('<div class="kpis">'
@@ -240,9 +264,9 @@ st.markdown('<div class="kpis">'
             + "</div>", unsafe_allow_html=True)
 
 # ---------- Navegação (uma seção por vez, sem menu lateral)
-VISTAS = [f"Exceções ({n_pend})", "Lote final", "Caixa de e-mail", "Planilha mãe", "Resumo da fila"]
-vista = st.segmented_control("Seção", VISTAS, default=VISTAS[0], label_visibility="collapsed") or VISTAS[0]
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+VISTAS = [f"Exceções ({n_pend})", "Caixa de e-mail", "Planilha mãe", "Lote final"]
+vista = st.segmented_control("Seção", VISTAS, default=VISTAS[0], label_visibility="collapsed", key="secao") or VISTAS[0]
+st.markdown('<div class="secao-espaco"></div>', unsafe_allow_html=True)
 
 # ================= EXCEÇÕES
 if vista.startswith("Exceções"):
@@ -279,7 +303,7 @@ if vista.startswith("Exceções"):
               <div class="din"><div class="v">{brl(c.valor)}</div><div class="q">{c.qtd} título(s)</div></div>
               <div class="acao"><b>Ação proposta:</b> {ACAO_TEXTO.get(c.acao, c.acao)} · <b>Quem decide:</b> {e(quem)}
               {estado}</div></div>""", unsafe_allow_html=True)
-            b1, b2, b3, b4 = st.columns([1.3, 1.1, 1.1, 1.6])
+            b1, b2, b3, b4 = st.columns(4)
             if not efe:
                 if b1.button(ACAO_BOTAO.get(c.acao, "Aprovar ação"), key=f"a-{c.caso_id}", type="primary",
                              use_container_width=True):

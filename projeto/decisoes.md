@@ -148,3 +148,13 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Pedido do Mateus:** o "Retirar títulos do lote" deve ficar na Caixa de e-mail, com um atalho em cada linha: clicou no e-mail, o formulário já vem preenchido.
 - **Decisão:** a tabela de e-mails tem seleção por linha. Ao clicar, o código sugere os títulos daquele fornecedor que ainda seguem no lote (só os da NF citada no e-mail, se houver) e preenche o motivo com o e-mail, o remetente e o assunto. Se o título da NF já está fora do lote, avisa "nada a retirar". O formulário saiu do Lote final, que agora tem um atalho em texto.
 - **IA errou?** Durante o teste no navegador, um clique do agente caiu em "Liberar mesmo assim" no caso da **Pigmentos (boleto falso)**, às 13:27: o golpe voltou ao lote com 1 clique. A decisão de teste foi apagada e, por ser uma ação crítica (skill de UX), **liberar um caso de fraude agora exige confirmação e um motivo escrito**. Também corrigidos: data dos e-mails em formato americano (10/13 → 13/10), seletor de lote cortado ("Banco Meridiano · 0") e rótulos dos KPIs quebrando em tela estreita.
+
+### [13:47] Painel no layout do wireframe do Mateus
+- **Pedido:** seguir um wireframe com o lote como título e seletor à esquerda, "GoGuardian / Gogroup" à direita, 4 cartões de números iguais, abas sublinhadas (Exceções · Caixa de e-mail · Planilha mãe · Lote final) e bastante respiro. Usar como guia, não copiar.
+- **Decisão:**
+  - **Cabeçalho:** o título **é** o seletor de lote, com a seta ao lado; à direita, o nome do produto "GoGuardian", o logo oficial da Gogroup e o status da IA. Saiu a barra superior.
+  - **KPIs:** rótulo e ícone pequeno em cima, **valor em R$ grande** embaixo, alinhados à esquerda.
+  - **Navegação:** abas sublinhadas, com a ativa em azul; a aba "Resumo da fila" saiu.
+  - **Botões dos casos:** em 4 colunas iguais.
+  - **Espaçamento** maior entre os blocos.
+- **Observação:** o wireframe escreve "GoGroup"; pelo brandbook o certo é **Gogroup**, por isso foi usado o logo oficial.
