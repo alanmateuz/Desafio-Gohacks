@@ -84,7 +84,7 @@ table.t .sec{ color:var(--texto-2); font-size:.78rem; }
 .barra-total .r{ font-size:.82rem; opacity:.9; } .barra-total .v{ font-size:1.6rem; font-weight:800; font-variant-numeric:tabular-nums; }
 .vazio{ text-align:center; padding:30px; color:var(--texto-2); }
 div[data-testid="stButtonGroup"] button{ font-weight:600; }
-.stButton button{ border-radius:999px; font-weight:600; white-space:nowrap; }
+.stButton button{ border-radius:999px; font-weight:600; white-space:nowrap; min-height:44px; }
 .stButton button[kind="primary"]{ background:var(--rosa); border-color:var(--rosa); color:#fff; }
 .stButton button[kind="primary"]:hover{ background:#c4116d; border-color:#c4116d; color:#fff; }
 .stButton button:focus-visible{ outline:3px solid var(--azul-claro); outline-offset:2px; }
@@ -206,7 +206,9 @@ def nome_lote(l: str) -> str:
     if l == "fila":
         return "Fila inteira · 03/11 a 13/11"
     r = info.loc[l]
-    return f"{r.banco_pagador} · {pd.to_datetime(r.data_prevista).strftime('%d/%m')} · fecha às {r.horario_fechamento}"
+    d = pd.to_datetime(r.data_prevista)
+    dia = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"][d.weekday()]
+    return f"{r.banco_pagador} · {dia}, {d.strftime('%d/%m')} · fecha às {r.horario_fechamento}"
 
 
 # ---------- Cabeçalho: o lote é o título (e o seletor); a marca fica à direita
@@ -257,7 +259,7 @@ st.markdown(f'<div class="subtitulo">{len(vis)} títulos conferidos antes do env
 # ---------- KPIs (o dinheiro em destaque)
 st.markdown('<div class="kpis">'
             + kpi("banco", "#2659a5", "Vai ao banco", brl(seguem.valor.sum()), f"{len(seguem)} títulos liberados")
-            + kpi("escudo", "#e5273c", "Protegido", brl(retidos.valor.sum()), f"{len(retidos)} títulos fora do lote")
+            + kpi("escudo", "#1d9e75", "Protegido", brl(retidos.valor.sum()), f"{len(retidos)} títulos fora do lote")
             + kpi("alerta", "#f8ae13", "Precisa de decisão", f"{n_pend} caso(s)",
                   brl(pendentes.valor.sum()) + " aguardando")
             + kpi("pessoa", "#3dbfef", "Pessoas acionadas", str((cs.acionar != "").sum() + len(al_vis)),
@@ -312,6 +314,8 @@ if vista.startswith("Exceções"):
                     st.rerun()
                 if classe == "fraude":  # ação crítica: pede confirmação e motivo
                     with b2.popover("Liberar mesmo assim", use_container_width=True):
+                        dest = vis[vis.titulo_id.isin(tits)].destino_pagamento.unique()
+                        st.markdown(f"**{brl(c.valor)}** vão para **{', '.join(dest)}** no próximo envio.")
                         st.markdown("**Liberar uma suspeita de fraude?** O dinheiro sai no próximo envio, "
                                     "para o destino atual.")
                         mot_lib = st.text_input("Por que é seguro liberar?", key=f"ml-{c.caso_id}",
@@ -500,23 +504,29 @@ elif vista == "Caixa de e-mail":
             else:
                 st.markdown('<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Clique num e-mail acima, ou '
                             'escolha os títulos à mão.</div>', unsafe_allow_html=True)
-            r1, r2, r3 = st.columns([2.2, 2, 0.9], vertical_alignment="bottom")
-            escolhidos = r1.multiselect("Títulos", list(rotulo_tit), default=[t for t in sugeridos if t in rotulo_tit],
+            escolhidos = st.multiselect("Títulos", list(rotulo_tit),
+                                        default=[t for t in sugeridos if t in rotulo_tit],
                                         format_func=rotulo_tit.get, placeholder="Escolha um ou mais títulos",
                                         key=f"ms-{chave}")
-            motivo_m = r2.text_input("Motivo", value=motivo_padrao, key=f"mt-{chave}",
+            motivo_m = st.text_input("Motivo", value=motivo_padrao, key=f"mt-{chave}",
                                      placeholder="ex.: fornecedor ligou dizendo que não emitiu esta nota")
-            if r3.button("Retirar", type="primary", use_container_width=True,
-                         disabled=not (escolhidos and motivo_m.strip()), key=f"rt-{chave}"):
+            ok_tit, ok_mot = bool(escolhidos), bool(motivo_m.strip())
+            if ok_tit and not ok_mot:
+                st.markdown('<div style="color:#a3162a;font-size:.84rem">⚠ Escreva o motivo: ele fica registrado '
+                            'e aparece para quem revisar.</div>', unsafe_allow_html=True)
+            if ok_tit:
+                v_sel = seguem[seguem.titulo_id.isin(escolhidos)].valor.sum()
+                st.markdown(f"""<div style="background:#eef3fa;border-radius:14px;padding:12px 16px;margin:8px 0;
+                  font-size:.9rem">Sai do lote: <b style="font-variant-numeric:tabular-nums">{brl(v_sel)}</b>
+                  ({len(escolhidos)} título(s)) · o envio cai de {brl(seguem.valor.sum())} para
+                  <b style="font-variant-numeric:tabular-nums">{brl(seguem.valor.sum() - v_sel)}</b></div>""",
+                            unsafe_allow_html=True)
+            if st.button(f"Retirar {len(escolhidos)} título(s) do lote" if ok_tit else "Retirar do lote",
+                         type="primary", disabled=not (ok_tit and ok_mot), key=f"rt-{chave}"):
                 for tid in escolhidos:
                     dh.retirar_manual(tid, motivo_m.strip(), USUARIO)
                 st.rerun()
-            if escolhidos:
-                st.caption(f"{len(escolhidos)} título(s) selecionado(s): " + ", ".join(escolhidos)
-                           + f" · {brl(seguem[seguem.titulo_id.isin(escolhidos)].valor.sum())}")
-            else:
-                st.caption("Escolha ao menos um título e escreva o motivo para liberar o botão. "
-                           "O que for retirado aparece em Exceções › Retiradas manuais, onde dá para devolver.")
+            st.caption("O que for retirado aparece em Exceções › Retiradas manuais, onde dá para devolver.")
         st.caption("A IA só lê o texto. Quem decide se um e-mail é suspeito é o código (endereço e domínio do cadastro). "
                    "O texto de um e-mail nunca libera um pagamento.")
 

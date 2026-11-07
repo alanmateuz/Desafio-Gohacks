@@ -158,3 +158,14 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   - **Botões dos casos:** em 4 colunas iguais.
   - **Espaçamento** maior entre os blocos.
 - **Observação:** o wireframe escreve "GoGroup"; pelo brandbook o certo é **Gogroup**, por isso foi usado o logo oficial.
+
+### [14:10] Skill checkout-form-ux: só o que muda a experiência
+- **Pedido do Mateus:** aplicar a skill `checkout-form-ux` apenas no que importa, para adiantar o pitch.
+- **Aplicado:**
+  1. **Cor com significado:** o KPI "Protegido" passou de vermelho para verde, e o vermelho ficou só para fraude e erro.
+  2. **Total consolidado antes de confirmar:** na retirada, aparece "Sai do lote: R$ X · o envio cai de R$ A para R$ B"; ao liberar uma fraude, aparece "R$ X vão para a conta Z".
+  3. **Formulário de retirada em coluna única**, com aviso embaixo do campo quando falta o motivo e botão que diz quantos títulos vão sair.
+  4. **Data real** com dia da semana no título do lote ("ter, 03/11").
+  5. **Botões com altura mínima de 44 px**, a área mínima de toque.
+- **Descartado (não se aplica ou tem pouco ganho aqui):** campo de cartão, checkout como convidado, meios de pagamento, troca de listas suspensas por botões de opção.
+- **IA errou?** No teste, o primeiro item da lista de títulos é "selecionar todos", e o Enter marcou os 185 títulos. Nada saiu, porque o motivo é obrigatório e o resumo mostrou "o envio cai para R$ 0,00". O caso ficou como argumento de por que o total antes de confirmar importa.
