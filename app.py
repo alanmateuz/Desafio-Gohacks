@@ -39,7 +39,7 @@ html, body, .stApp, .stApp *:not([data-testid="stIconMaterial"]):not(.material-s
   color:var(--texto); font-weight:500; font-size:.8rem; padding:5px 12px; border-radius:999px; white-space:nowrap; }
 .ponto{ width:8px; height:8px; border-radius:50%; display:inline-block; }
 .cabeca{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:26px 0 18px; }
-.cabeca h1{ font-size:1.55rem; font-weight:700; margin:0; padding:0; color:var(--texto); line-height:1.3; }
+.cabeca h1{ font-size:clamp(1.15rem, 2.2vw, 1.55rem); font-weight:700; margin:0; padding:0; color:var(--texto); line-height:1.3; }
 .cabeca .sub{ color:var(--texto-2); font-size:.9rem; margin-top:2px; }
 .kpis{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px; margin-bottom:26px; }
 @media (max-width:1100px){ .kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
@@ -382,12 +382,14 @@ elif vista == "Lote final":
                     '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Achou algo suspeito que o agente '
                     'não pegou? Tire do envio com um motivo. Fica registrado e pode ser devolvido na aba Exceções.</div>',
                     unsafe_allow_html=True)
-        r1, r2, r3 = st.columns([2.2, 2, 1], vertical_alignment="bottom")
+        r1, r2, r3 = st.columns([2.2, 2, 0.9], vertical_alignment="bottom")
         rotulo_tit = {t.titulo_id: f"{t.titulo_id} · {t.razao_social} · {brl(t.valor)}" for t in seguem.itertuples()}
         escolhidos = r1.multiselect("Títulos", list(rotulo_tit), format_func=rotulo_tit.get,
                                     placeholder="Escolha um ou mais títulos")
+        if escolhidos:
+            r1.caption(f"{len(escolhidos)} título(s) selecionado(s): " + ", ".join(escolhidos))
         motivo_m = r2.text_input("Motivo", placeholder="ex.: fornecedor ligou dizendo que não emitiu esta nota")
-        if r3.button("Retirar do lote", type="primary", use_container_width=True,
+        if r3.button("Retirar", type="primary", use_container_width=True,
                      disabled=not (escolhidos and motivo_m.strip())):
             for tid in escolhidos:
                 dh.retirar_manual(tid, motivo_m.strip(), USUARIO)
