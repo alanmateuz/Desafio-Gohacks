@@ -1,6 +1,6 @@
 # Contexto do projeto (handoff para outro Claude)
 
-Atualizado em 07/11/2026, ~13h55 (código pronto: camadas 1.1, 2 e 3, painel no layout do wireframe, CRUD das suspeitas; próximo passo: pitch e submissão). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
+Atualizado em 07/11/2026, ~14h25 (código pronto: camadas 1.1, 2 e 3, painel com faixa azul e layout do wireframe, CRUD das suspeitas, ajustes da skill checkout-form-ux; próximo passo: pitch e submissão). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
 
 ## Quem e o quê
 - **Mateus** (git: `alanmateuz`) participa do **GoHacks Talent**, um hackathon individual de 1 dia. A construção vai das 9h40 às 16h30, o código congela às 15h30 e a submissão fecha às 16h30.
@@ -185,11 +185,13 @@ python -m streamlit run app.py            # painel em http://localhost:8501
 - A IA não mudou nenhuma decisão, só acrescentou evidência.
 - A leitura dos 246 e-mails custou US$ 0,0059.
 
-**Painel atual (`app.py`, commit `2957fd2`), no layout do wireframe do Mateus.** Rode com `python -m streamlit run app.py`; o painel fica em http://localhost:8501.
+**Painel atual (`app.py`, commit `bffe31f`), no layout do wireframe do Mateus.** Rode com `python -m streamlit run app.py --server.port 8501 --server.runOnSave true --server.fileWatcherType poll` (sem `runOnSave`/`poll`, neste notebook o Streamlit continuava servindo a versão antiga do CSS depois de editar o `app.py`; se acontecer, reinicie o servidor). O painel fica em http://localhost:8501.
+
+**Faixa azul no topo** (`.faixa`), de ponta a ponta: à esquerda "Contas a pagar · conferência dos lotes de remessa"; à direita **GoGuardian em branco** e o **logo Gogroup em amarelo-limão** (`assets/logo-gogroup-limao.png`, a variação oficial do brandbook sobre fundo azul, gerada a partir do logo oficial).
 
 **Cabeçalho**
 - À esquerda, "Lote de remessa" em letra pequena e, embaixo, **o próprio título funcionando como seletor de lote** (`selectbox` com `key="lote"`, estilizado por `.st-key-lote`).
-- À direita, "GoGuardian", o logo oficial da Gogroup e o status da IA.
+- À direita, o selo de status da IA ("IA ativa · Jev").
 - Embaixo do título, um subtítulo com a quantidade de títulos, o valor na fila e a referência.
 
 **4 KPIs** (`kpi()`): rótulo e ícone pequeno em cima, **valor em R$ grande** embaixo.
@@ -226,6 +228,15 @@ python -m streamlit run app.py            # painel em http://localhost:8501
 **CRUD das suspeitas** (`src/decisoes_humanas.py`, arquivo `dados/decisoes_humanas.json`, no formato `{"casos": {...}, "manuais": {...}}`): criar (retirada manual), ler, atualizar (aprovar, liberar, manter, nota, responsável) e excluir (desfazer, devolver), sempre com registro de quem fez e quando. O arquivo é apagado antes da demo para começar limpo.
 
 **Testado no navegador em 1366 px e em ~700 px:** aprovar, manter, desfazer ação do agente, retirar e devolver (os valores bateram ao centavo). Ainda não conferido em 1920 px.
+
+**Regras de estilo que já custaram tempo (não quebre):**
+- O CSS fica num único `st.markdown("<style>…")`, **sem linhas em branco** dentro dele, senão o Streamlit mostra o CSS como texto.
+- **Não use `>` em seletores**: o Markdown transforma em `&gt;` e a regra inteira é descartada.
+- Os painéis brancos usam `st.container(border=True, key="painelN")` e o CSS `[class*="st-key-painel"]`. Não estilize `stVerticalBlock` de forma genérica: isso pinta o cabeçalho de branco.
+- Campos de formulário são brancos, com borda `#d5dbe4` e foco azul. O seletor de lote (`.st-key-lote`) é transparente e funciona como título.
+- O KPI "Protegido" é verde. O vermelho fica só para fraude e erro.
+- Liberar um caso de fraude exige confirmação e motivo. A retirada manual mostra quanto sai e como fica o total do envio antes do botão.
+- Antes de mostrar o painel ou de commitar, apague `dados/decisoes_humanas.json`, para a demo começar limpa.
 
 ## Próximo passo: `/pitch` e submissão (código congela às 15h30, envio até 16h30)
 1. `projeto/03-pitch.md`: roteiro de 5 min e de 90 s, com os números de `decisoes.md` e de `eval/antes_depois.csv`.
