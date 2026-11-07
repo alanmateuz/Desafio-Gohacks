@@ -125,3 +125,9 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Por quê:** o Mateus pediu o sistema num painel com a identidade Gogroup, minimalista e profissional, usando as skills de UI/UX (estado sempre com texto + ícone, um botão principal por card, valores em R$ com lote e período, estados vazio, simulado e falha).
 - **Descartei:** reescrever em HTML/JS separado (mais bonito, porém sem tempo antes de congelar o código às 15h30).
 - **IA errou?** Ao testar o painel, o agente percebeu que, depois de "Aprovar reversão da conta", os títulos da Embalarte voltavam ao lote **com o destino ainda na conta do golpista** (905). Corrigido: o coletor guarda `destino_anterior` (774/7166/9517944-5) e o lote final usa a conta anterior e o valor da duplicata nas correções. Há um teste novo para isso (`test_reversao_paga_na_conta_anterior`). pytest 26/26.
+
+### [14:45] Revisão visual do painel (feedback do Mateus)
+- **Feedback:** "precisa de uma revisão visual; as informações monetárias devem ter mais destaque; muitas coisas cortadas ou mal feitas". Ele mandou 2 telas de referência de sistemas de gestão financeira e pediu **sem menu lateral**.
+- **Decisão:** barra superior (logo, pílula, status da IA); cabeçalho com o lote e o seletor; **4 KPIs no estilo das referências** (bloco de ícone colorido + **R$ em destaque**: vai ao banco, protegido, precisa de decisão, pessoas acionadas); **navegação por pílulas** (Exceções · Lote final · Caixa de e-mail · Planilha mãe · Resumo da fila), uma seção por vez; cada seção num painel branco com **tabela compacta**, valores alinhados à direita e selos com texto e ícone. Nada cortado: tabelas HTML com quebra de linha; larguras definidas na planilha mãe.
+- **Descartei:** menu lateral (o Mateus não quis) e a rolagem de uma página só.
+- **IA errou?** A 1ª versão tinha cortes (título quebrando, colunas truncadas) e R$ pequenos → corrigido com o feedback do Mateus e conferido no navegador em 1366 px.
