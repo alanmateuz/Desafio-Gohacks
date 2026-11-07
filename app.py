@@ -54,8 +54,11 @@ html, body, .stApp, .stApp *:not([data-testid="stIconMaterial"]):not(.material-s
   box-shadow:0 1px 2px rgba(16,24,40,.06); }
 .painel h3{ font-size:1.02rem; font-weight:600; margin:0 0 2px; padding:0; color:var(--texto); }
 .painel .nota{ color:var(--texto-2); font-size:.82rem; margin:0 0 12px; }
-.tabela-wrap{ overflow:auto; max-height:560px; border:1px solid var(--borda); border-radius:12px; }
-table.t{ width:100%; border-collapse:collapse; font-size:.85rem; }
+.tabela-wrap{ overflow:auto; max-height:560px; border:1px solid var(--borda); border-radius:12px; background:var(--branco); }
+table.t{ width:100%; border-collapse:collapse; font-size:.85rem; background:var(--branco); }
+table.t th{ background:var(--branco) !important; }
+[data-testid="stVerticalBlockBorderWrapper"], div[class*="stVerticalBlock"][data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlockBorderWrapper"]{ background:var(--branco); border-radius:18px; }
+[data-testid="stDataFrame"]{ background:var(--branco); }
 table.t th{ position:sticky; top:0; background:#f8f9fb; color:var(--texto-2); font-weight:600; text-align:left;
   padding:10px 12px; border-bottom:1px solid var(--borda); white-space:nowrap; z-index:1; }
 table.t td{ padding:10px 12px; border-bottom:1px solid #eef0f4; vertical-align:top; color:var(--texto); }
