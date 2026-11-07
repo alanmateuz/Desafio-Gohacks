@@ -166,6 +166,13 @@ lotes = df.drop_duplicates("lote_remessa").sort_values(["data_prevista", "horari
 info = df.drop_duplicates("lote_remessa").set_index("lote_remessa")
 
 
+def nome_curto(l: str) -> str:
+    if l == "fila":
+        return "Fila inteira (03/11 a 13/11)"
+    r = info.loc[l]
+    return f"{r.banco_pagador.replace('Banco ', '')} · {pd.to_datetime(r.data_prevista).strftime('%d/%m')} · {r.horario_fechamento}"
+
+
 def nome_lote(l: str) -> str:
     if l == "fila":
         return "Fila inteira · 03/11 a 13/11"
@@ -183,9 +190,9 @@ st.markdown(f"""<div class="barra"><div style="display:flex;align-items:center;g
             unsafe_allow_html=True)
 
 # ---------- Cabeçalho da tela + seletor de lote
-c1, c2 = st.columns([3, 1.3], vertical_alignment="bottom")
+c1, c2 = st.columns([2.6, 1.4], vertical_alignment="bottom")
 with c2:
-    escolha = st.selectbox("Lote de remessa", ["fila"] + lotes, index=1, format_func=nome_lote)
+    escolha = st.selectbox("Lote de remessa", ["fila"] + lotes, index=1, format_func=nome_curto)
 vis = df if escolha == "fila" else df[df.lote_remessa == escolha]
 cs = casos(vis)
 
@@ -218,15 +225,15 @@ n_pend = len(pendentes) + len(alertas_pend)
 
 with c1:
     st.markdown(f"""<div class="cabeca" style="margin-bottom:0"><div><h1>{e(nome_lote(escolha))}</h1>
-      <div class="sub">{len(vis)} títulos conferidos antes do envio ao banco · {brl(vis.valor.sum())} na fila</div></div></div>""",
+      <div class="sub">{len(vis)} títulos conferidos antes do envio · <span style="white-space:nowrap">{brl(vis.valor.sum())}</span> na fila</div></div></div>""",
                 unsafe_allow_html=True)
 st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
 
 # ---------- KPIs (o dinheiro em destaque)
 st.markdown('<div class="kpis">'
             + kpi("banco", "#2659a5", "Vai ao banco", brl(seguem.valor.sum()), f"{len(seguem)} títulos liberados")
-            + kpi("escudo", "#e5273c", "Protegido (fora do lote)", brl(retidos.valor.sum()), f"{len(retidos)} títulos retidos")
-            + kpi("alerta", "#f8ae13", "Precisa da sua decisão", f"{n_pend} caso(s)",
+            + kpi("escudo", "#e5273c", "Protegido", brl(retidos.valor.sum()), f"{len(retidos)} títulos fora do lote")
+            + kpi("alerta", "#f8ae13", "Precisa de decisão", f"{n_pend} caso(s)",
                   brl(pendentes.valor.sum()) + " aguardando")
             + kpi("pessoa", "#3dbfef", "Pessoas acionadas", str((cs.acionar != "").sum() + len(al_vis)),
                   f"{sum(1 for x in cs.efetiva if x and x.get('auto'))} casos resolvidos pelo agente")
@@ -278,8 +285,18 @@ if vista.startswith("Exceções"):
                              use_container_width=True):
                     dh.registrar(c.caso_id, "aprovar", USUARIO)
                     st.rerun()
-                if b2.button("Liberar mesmo assim", key=f"l-{c.caso_id}", use_container_width=True,
-                             help="Falso alarme: o título volta ao lote como está"):
+                if classe == "fraude":  # ação crítica: pede confirmação e motivo
+                    with b2.popover("Liberar mesmo assim", use_container_width=True):
+                        st.markdown("**Liberar uma suspeita de fraude?** O dinheiro sai no próximo envio, "
+                                    "para o destino atual.")
+                        mot_lib = st.text_input("Por que é seguro liberar?", key=f"ml-{c.caso_id}",
+                                                placeholder="ex.: confirmei com o fornecedor pelo telefone do cadastro")
+                        if st.button("Confirmar liberação", key=f"l-{c.caso_id}", type="primary",
+                                     disabled=not mot_lib.strip()):
+                            dh.registrar(c.caso_id, "liberar", USUARIO, nota=mot_lib.strip())
+                            st.rerun()
+                elif b2.button("Liberar mesmo assim", key=f"l-{c.caso_id}", use_container_width=True,
+                               help="Falso alarme: o título volta ao lote como está"):
                     dh.registrar(c.caso_id, "liberar", USUARIO)
                     st.rerun()
                 if b3.button("Manter fora do lote", key=f"m-{c.caso_id}", use_container_width=True,
@@ -376,26 +393,7 @@ elif vista == "Lote final":
         csv = pd.DataFrame([{k: v for k, v in l.items() if not k.endswith("_html") and k != "_v"} for l in linhas])
         st.download_button("Baixar planilha do lote (CSV)", csv.to_csv(index=False).encode("utf-8-sig"),
                            file_name=f"lote_final_{escolha}.csv", mime="text/csv")
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-    with st.container(border=True):
-        st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Retirar títulos do lote</h3>'
-                    '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Achou algo suspeito que o agente '
-                    'não pegou? Tire do envio com um motivo. Fica registrado e pode ser devolvido na aba Exceções.</div>',
-                    unsafe_allow_html=True)
-        r1, r2, r3 = st.columns([2.2, 2, 0.9], vertical_alignment="bottom")
-        rotulo_tit = {t.titulo_id: f"{t.titulo_id} · {t.razao_social} · {brl(t.valor)}" for t in seguem.itertuples()}
-        escolhidos = r1.multiselect("Títulos", list(rotulo_tit), format_func=rotulo_tit.get,
-                                    placeholder="Escolha um ou mais títulos")
-        if escolhidos:
-            r1.caption(f"{len(escolhidos)} título(s) selecionado(s): " + ", ".join(escolhidos))
-        motivo_m = r2.text_input("Motivo", placeholder="ex.: fornecedor ligou dizendo que não emitiu esta nota")
-        if r3.button("Retirar", type="primary", use_container_width=True,
-                     disabled=not (escolhidos and motivo_m.strip())):
-            for tid in escolhidos:
-                dh.retirar_manual(tid, motivo_m.strip(), USUARIO)
-            st.rerun()
-        if not (escolhidos and motivo_m.strip()):
-            st.caption("Escolha ao menos um título e escreva o motivo para liberar o botão.")
+    st.caption("Para tirar um título do envio, use a seção Caixa de e-mail: clique no e-mail suspeito e os títulos ligados a ele já vêm preenchidos.")
     st.caption("Dados fictícios do evento: correções aprovadas ainda precisariam ser lançadas no ERP.")
 
 # ================= CAIXA DE E-MAIL
@@ -421,11 +419,79 @@ elif vista == "Caixa de e-mail":
                    "conf": f"{r.confianca:.2f}" if pd.notna(r.confianca) else "—",
                    "sus_html": f'<span class="selo fraude">{e(rot[r.suspeita])}</span>' if r.suspeita else ""}
                   for r in base.itertuples()]
+        tabela_cx = pd.DataFrame({
+            "Data": pd.to_datetime(base.data_hora).dt.strftime("%d/%m %H:%M"), "Remetente": base.remetente, "Assunto": base.assunto,
+            "Tipo (IA)": base.tipo.replace({"": "falha de leitura"}),
+            "Troca de conta (IA)": base.pede_troca_bancaria.map({True: "Sim", False: "Não"}).fillna("—"),
+            "Ordem ao agente (IA)": base.tenta_instruir_agente.map({True: "Sim", False: "Não"}).fillna("—"),
+            "Confiança": base.confianca, "Suspeita (código)": base.suspeita.map(rot).fillna("—")})
         with st.container(border=True):
-            st.markdown(tabela(linhas, [("data", "Data", ""), ("rem", "Remetente", ""), ("ass", "Assunto", ""),
-                                        ("tipo", "Tipo (IA)", ""), ("troca", "Pede troca de conta (IA)", ""),
-                                        ("ordem", "Ordem ao agente (IA)", ""), ("conf", "Confiança", "num"),
-                                        ("sus_html", "Suspeita (código)", "")], altura=520), unsafe_allow_html=True)
+            st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">E-mails</h3>'
+                        '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Clique numa linha para retirar '
+                        'do lote os títulos ligados àquele e-mail.</div>', unsafe_allow_html=True)
+            sel = st.dataframe(tabela_cx, hide_index=True, use_container_width=True,
+                               height=min(420, 36 * (len(tabela_cx) + 1) + 4),
+                               on_select="rerun", selection_mode="single-row", key=f"cx-{filtro}", column_config={
+                                   "Data": st.column_config.TextColumn(width="small"),
+                                   "Remetente": st.column_config.TextColumn(width="large"),
+                                   "Assunto": st.column_config.TextColumn(width="large"),
+                                   "Confiança": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.2f",
+                                                                                width="small")})
+        linha_sel = sel.selection.rows[0] if sel and sel.selection.rows else None
+        email = base.iloc[linha_sel] if linha_sel is not None else None
+        st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Retirar títulos do lote</h3>',
+                        unsafe_allow_html=True)
+            rotulo_tit = {t.titulo_id: f"{t.titulo_id} · {t.razao_social} · {brl(t.valor)}" for t in seguem.itertuples()}
+            sugeridos, motivo_padrao, chave = [], "", "nenhum"
+            if email is not None:
+                import re as _re
+                chave = email.comunicacao_id
+                nfs = {n.lstrip("0") for n in _re.findall(r"NF\s*n?º?\s*(\d+)", f"{email.assunto} {email.texto}", _re.I)}
+                do_forn = seguem[seguem.fornecedor_id == email.fornecedor_id] if email.fornecedor_id else seguem.iloc[0:0]
+                ligados = do_forn[do_forn.nf_normalizada.isin(nfs)] if nfs else do_forn
+                sugeridos = list(ligados.titulo_id)  # com NF citada: só os títulos daquela NF
+                motivo_padrao = (f"Suspeita no e-mail {email.comunicacao_id} de {email.remetente}: {email.assunto}")
+                ja_fora = vis[(vis.fornecedor_id == email.fornecedor_id) & vis.nf_normalizada.isin(nfs)
+                              & ~vis.titulo_id.isin(seguem.titulo_id)] if nfs else vis.iloc[0:0]
+                if len(ja_fora) and not sugeridos:
+                    st.success(f"✓ O título da NF {', '.join(sorted(nfs))} deste e-mail já está fora do lote "
+                               f"({', '.join(ja_fora.titulo_id)}). Nada a retirar.")
+                elif nfs and not sugeridos and len(do_forn):
+                    st.info(f"Nenhum título da NF {', '.join(sorted(nfs))} está neste lote. "
+                            "Escolha os títulos à mão, se quiser.")
+                elif email.fornecedor_id and not len(do_forn):
+                    st.info("Este fornecedor não tem títulos a enviar neste lote. Troque o lote no topo para "
+                            "\"Fila inteira\" para ver todos.")
+                elif not email.fornecedor_id:
+                    st.info("Este e-mail não é de nenhum fornecedor do cadastro: não há títulos ligados a ele. "
+                            "Escolha os títulos à mão, se quiser.")
+                else:
+                    st.markdown(f'<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Preenchido a partir do '
+                                f'e-mail <b>{e(email.comunicacao_id)}</b> ({e(email.remetente)}): '
+                                f'{len(sugeridos)} título(s) do fornecedor' + (f" com a NF {', '.join(sorted(nfs))}" if nfs and len(ligados) else "")
+                                + '.</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Clique num e-mail acima, ou '
+                            'escolha os títulos à mão.</div>', unsafe_allow_html=True)
+            r1, r2, r3 = st.columns([2.2, 2, 0.9], vertical_alignment="bottom")
+            escolhidos = r1.multiselect("Títulos", list(rotulo_tit), default=[t for t in sugeridos if t in rotulo_tit],
+                                        format_func=rotulo_tit.get, placeholder="Escolha um ou mais títulos",
+                                        key=f"ms-{chave}")
+            motivo_m = r2.text_input("Motivo", value=motivo_padrao, key=f"mt-{chave}",
+                                     placeholder="ex.: fornecedor ligou dizendo que não emitiu esta nota")
+            if r3.button("Retirar", type="primary", use_container_width=True,
+                         disabled=not (escolhidos and motivo_m.strip()), key=f"rt-{chave}"):
+                for tid in escolhidos:
+                    dh.retirar_manual(tid, motivo_m.strip(), USUARIO)
+                st.rerun()
+            if escolhidos:
+                st.caption(f"{len(escolhidos)} título(s) selecionado(s): " + ", ".join(escolhidos)
+                           + f" · {brl(seguem[seguem.titulo_id.isin(escolhidos)].valor.sum())}")
+            else:
+                st.caption("Escolha ao menos um título e escreva o motivo para liberar o botão. "
+                           "O que for retirado aparece em Exceções › Retiradas manuais, onde dá para devolver.")
         st.caption("A IA só lê o texto. Quem decide se um e-mail é suspeito é o código (endereço e domínio do cadastro). "
                    "O texto de um e-mail nunca libera um pagamento.")
 
