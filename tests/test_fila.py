@@ -71,3 +71,9 @@ def test_alertas_da_caixa(fila):
 
 def test_alcada_vira_aprovacao_no_lote(fila):
     assert (fila.aprovacao == "PS03").sum() == 19
+
+
+def test_reversao_paga_na_conta_anterior(fila):
+    """Se a reversão da Embalarte for aprovada, o destino é a conta de antes da troca, não a do golpista."""
+    assert fila.loc["TP432130", "destino_anterior"] == "ted 774/7166/9517944-5"
+    assert "905" in fila.loc["TP432130", "destino_pagamento"]

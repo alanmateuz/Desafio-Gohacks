@@ -66,6 +66,17 @@ def _montar_base(referencia: datetime) -> pd.DataFrame:
         alts = [a for a in por_fornecedor if a["fornecedor_id"] == fid]
         trocas[fid] = troca_bancaria_sem_confirmacao(alts, referencia)
     mae["troca_bancaria_suspeita"] = mae["fornecedor_id"].map(trocas)
+    # Conta de ANTES da troca suspeita (para pagar no lugar certo se a reversão for aprovada)
+    anterior = {}
+    for fid, t in trocas.items():
+        if t:
+            mesmo = alteracoes[(alteracoes.fornecedor_id == fid) & (alteracoes.data_hora == t["data_hora"])]
+            v = dict(zip(mesmo.campo, mesmo.valor_anterior))
+            if {"banco", "agencia", "conta"} <= v.keys():
+                anterior[fid] = f"ted {v['banco']}/{v['agencia']}/{v['conta']}"
+            elif "chave_pix" in v:
+                anterior[fid] = f"pix {v['chave_pix']}"
+    mae["destino_anterior"] = mae["fornecedor_id"].map(anterior).fillna("")
 
     # Duplicidade contra todos os títulos não cancelados do ERP
     vivos = titulos[titulos["status"] != "cancelado"].copy()
