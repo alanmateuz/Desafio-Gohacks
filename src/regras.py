@@ -9,6 +9,9 @@ DECISOES = {"liberar", "retirar", "acionar"}
 CAMPOS_BANCARIOS = {"banco", "agencia", "conta", "chave_pix"}
 JANELA_TROCA_BANCARIA = timedelta(days=30)  # politicas.csv: "alterados há menos de 30 dias"
 RENATA = "PS01"  # coordenadora de CP: fraude, duplicidade, erro de lançamento
+APROVADOR = "aprovador"
+TOLERANCIA_DUPLICATA = 0.10  # politicas.csv tres_vias.titulo_x_duplicata (vai para config na camada 4)
+ALCADA_ANALISTA = 5000.0  # politicas.csv alcadas.analista_cp.*_ate
 
 
 def normalizar_nf(numero: str) -> str:
@@ -44,23 +47,70 @@ def chave_duplicidade(fornecedor_id: str, numero_nf: str, parcela: str) -> tuple
     return (fornecedor_id, nf, str(parcela).strip())
 
 
+def _vazio(valor) -> bool:
+    return valor is None or valor == "" or (isinstance(valor, float) and valor != valor)
+
+
 def avaliar(titulo: dict) -> list[dict]:
-    """Aplica as regras a uma linha da planilha mãe. Devolve a lista de violações."""
+    """Aplica as regras a uma linha da planilha mãe. Devolve as violações em ordem de prioridade:
+    a primeira define a ação e o caso. Cada violação traz a ação proposta (ferramentas.csv)."""
     violacoes = []
+    valor = float(titulo.get("valor") or 0)
+    forma = titulo.get("forma_pagamento")
+
     troca = titulo.get("troca_bancaria_suspeita")
-    if troca and titulo.get("forma_pagamento") in {"ted", "pix"}:
+    if troca and forma in {"ted", "pix"}:
         violacoes.append({
             "regra": "troca_bancaria_sem_confirmacao",
-            "acionar": RENATA,
+            "decisao": "retirar", "acao": "reverter_alteracao_cadastro", "acionar": RENATA,
             "fato": f"{troca['campo']} alterado em {troca['data_hora'][:10]} por {troca['alterado_por']}"
                     f" (origem: {troca['origem']}) sem confirmação registrada",
         })
+
+    raiz_boleto, raiz_forn = titulo.get("raiz_beneficiario_boleto"), titulo.get("raiz_fornecedor")
+    if forma == "boleto" and raiz_boleto and raiz_forn and raiz_boleto != raiz_forn:
+        violacoes.append({
+            "regra": "boleto_beneficiario_diferente",
+            "decisao": "retirar", "acao": "contatar_fornecedor", "acionar": RENATA,
+            "fato": f"boleto em nome do CNPJ {titulo.get('cnpj_beneficiario_boleto')}, que não é do "
+                    f"fornecedor (raiz {raiz_forn})",
+        })
+
     if titulo.get("duplicado_de"):
         violacoes.append({
             "regra": "duplicidade",
-            "acionar": RENATA,
+            "decisao": "retirar", "acao": "cancelar_titulo",
+            "acionar": RENATA if valor > ALCADA_ANALISTA else None,
             "fato": f"mesma NF {titulo['nf_normalizada']} parcela {titulo['parcela']} já está em "
                     f"{titulo['duplicado_de']}",
+        })
+
+    tem_nf = bool(titulo.get("nf_normalizada"))
+    if tem_nf and not titulo.get("chave_nf"):
+        if titulo.get("nf_outro_fornecedor"):
+            violacoes.append({
+                "regra": "nf_de_outro_fornecedor",
+                "decisao": "retirar", "acao": "corrigir_lancamento", "acionar": APROVADOR,
+                "fato": f"a NF {titulo['nf_normalizada']} não é deste fornecedor; é de "
+                        f"{titulo['nf_outro_fornecedor']}",
+            })
+        else:
+            violacoes.append({
+                "regra": "sem_nf_no_portal",
+                "decisao": "acionar", "acao": "retirar_do_lote", "acionar": RENATA,
+                "fato": f"a NF {titulo['nf_normalizada']} não existe no portal para este fornecedor",
+            })
+
+    vdup = titulo.get("valor_duplicata")
+    # arredonda para centavos: 1000.10 - 1000.00 dá 0.1000000000000227 em ponto flutuante
+    diferenca = round(abs(valor - float(vdup)), 2) if not _vazio(vdup) else 0.0
+    if diferenca > TOLERANCIA_DUPLICATA:
+        violacoes.append({
+            "regra": "valor_diferente_duplicata",
+            "decisao": "retirar", "acao": "corrigir_lancamento",
+            "acionar": APROVADOR if diferenca > ALCADA_ANALISTA else None,
+            "fato": f"título de R$ {valor:,.2f}, mas a duplicata da parcela {titulo['parcela']} é de "
+                    f"R$ {float(vdup):,.2f} (diferença de R$ {diferenca:,.2f})",
         })
     return violacoes
 

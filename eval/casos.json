@@ -1,27 +1,32 @@
 {
-  "_como_usar": "Cada caso é uma linha da planilha mãe (resumida) e o que o guardião deve decidir. Versão mínima da camada 1; o /testes amplia para 15-25 casos com gabarito do Mateus.",
+  "_como_usar": "Cada caso é uma linha da planilha mãe (resumida) e o que o guardião deve decidir. Casos escritos pelo agente dev a partir da verificação das 11:10; o /testes amplia para 15-25 com gabarito confirmado pelo Mateus.",
   "casos": [
     {
       "id": "01-limpo-segue",
-      "entrada": {"titulo_id": "TP000001", "fornecedor_id": "FP0001", "forma_pagamento": "boleto",
-                  "nf_normalizada": "1000", "parcela": "1/1", "troca_bancaria_suspeita": null, "duplicado_de": ""},
-      "checagens": {"esperado": {"decisao": "liberar"}, "campos_obrigatorios": ["motivo"]}
+      "entrada": {"titulo_id": "TP000001", "fornecedor_id": "FP0001", "forma_pagamento": "boleto", "valor": 1000.0,
+                  "nf_normalizada": "1000", "parcela": "1/1", "chave_nf": "X", "valor_duplicata": 1000.0,
+                  "raiz_fornecedor": "11111111", "raiz_beneficiario_boleto": "11111111",
+                  "troca_bancaria_suspeita": null, "duplicado_de": ""},
+      "checagens": {"esperado": {"decisao": "liberar", "acionar": null}, "campos_obrigatorios": ["motivo"]}
     },
     {
       "id": "02-embalarte-troca-sem-confirmacao",
-      "entrada": {"titulo_id": "TP432130", "fornecedor_id": "FP4615", "forma_pagamento": "ted",
-                  "nf_normalizada": "78418", "parcela": "1/1", "duplicado_de": "",
+      "entrada": {"titulo_id": "TP432130", "fornecedor_id": "FP4615", "forma_pagamento": "ted", "valor": 96480.0,
+                  "nf_normalizada": "78418", "parcela": "1/1", "chave_nf": "X", "valor_duplicata": 96480.0,
+                  "duplicado_de": "",
                   "troca_bancaria_suspeita": {"campo": "banco", "data_hora": "2026-10-30 16:05:00",
                                                "alterado_por": "usuario_07", "origem": "email"}},
-      "checagens": {"esperado": {"decisao": "retirar", "acionar": "PS01"},
+      "checagens": {"esperado": {"decisao": "retirar", "acao": "reverter_alteracao_cadastro", "acionar": "PS01"},
                     "deve_conter": {"regras_violadas": ["troca_bancaria_sem_confirmacao"]}}
     },
     {
-      "id": "03-maciez-duplicidade",
-      "entrada": {"titulo_id": "TP430006", "fornecedor_id": "FP6357", "forma_pagamento": "boleto",
-                  "nf_normalizada": "20329", "parcela": "2/2", "troca_bancaria_suspeita": null,
-                  "duplicado_de": "TP429834"},
-      "checagens": {"esperado": {"decisao": "retirar"}, "deve_conter": {"motivo": ["TP429834"]}}
+      "id": "03-maciez-duplicidade-cancela",
+      "entrada": {"titulo_id": "TP430006", "fornecedor_id": "FP6357", "forma_pagamento": "boleto", "valor": 4750.0,
+                  "nf_normalizada": "20329", "parcela": "2/2", "chave_nf": "X", "valor_duplicata": 4750.0,
+                  "raiz_fornecedor": "52759405", "raiz_beneficiario_boleto": "52759405",
+                  "troca_bancaria_suspeita": null, "duplicado_de": "TP429834"},
+      "checagens": {"esperado": {"decisao": "retirar", "acao": "cancelar_titulo", "acionar": null},
+                    "deve_conter": {"motivo": ["TP429834"]}}
     },
     {
       "id": "04-borda-dado-faltando",
@@ -30,10 +35,52 @@
     },
     {
       "id": "05-borda-boleto-ignora-troca-de-conta",
-      "entrada": {"titulo_id": "TP000002", "fornecedor_id": "FP4615", "forma_pagamento": "boleto",
-                  "nf_normalizada": "5", "parcela": "1/1", "duplicado_de": "",
+      "entrada": {"titulo_id": "TP000002", "fornecedor_id": "FP4615", "forma_pagamento": "boleto", "valor": 500.0,
+                  "nf_normalizada": "5", "parcela": "1/1", "chave_nf": "X", "valor_duplicata": 500.0,
+                  "raiz_fornecedor": "85990602", "raiz_beneficiario_boleto": "85990602", "duplicado_de": "",
                   "troca_bancaria_suspeita": {"campo": "conta", "data_hora": "2026-10-30 16:05:00",
                                                "alterado_por": "usuario_07", "origem": "email"}},
+      "checagens": {"esperado": {"decisao": "liberar"}}
+    },
+    {
+      "id": "06-zero-a-mais",
+      "entrada": {"titulo_id": "TP431459", "fornecedor_id": "FP1262", "forma_pagamento": "ted", "valor": 48380.0,
+                  "nf_normalizada": "1", "parcela": "1/1", "chave_nf": "X", "valor_duplicata": 4838.0,
+                  "troca_bancaria_suspeita": null, "duplicado_de": ""},
+      "checagens": {"esperado": {"decisao": "retirar", "acao": "corrigir_lancamento", "acionar": "aprovador"},
+                    "deve_conter": {"motivo": ["4,838.00"]}}
+    },
+    {
+      "id": "07-centavo-de-arredondamento-segue",
+      "entrada": {"titulo_id": "TP000003", "fornecedor_id": "FP0001", "forma_pagamento": "ted", "valor": 2003.67,
+                  "nf_normalizada": "9", "parcela": "1/3", "chave_nf": "X", "valor_duplicata": 2003.57,
+                  "troca_bancaria_suspeita": null, "duplicado_de": ""},
+      "checagens": {"esperado": {"decisao": "liberar"}}
+    },
+    {
+      "id": "08-fornecedor-errado",
+      "entrada": {"titulo_id": "TP431946", "fornecedor_id": "FP5079", "forma_pagamento": "ted", "valor": 9870.50,
+                  "nf_normalizada": "49704", "parcela": "1/1", "chave_nf": "", "nf_outro_fornecedor": "FP6799",
+                  "troca_bancaria_suspeita": null, "duplicado_de": ""},
+      "checagens": {"esperado": {"decisao": "retirar", "acao": "corrigir_lancamento"},
+                    "deve_conter": {"motivo": ["FP6799"]}}
+    },
+    {
+      "id": "09-boleto-golpe-banco-igual",
+      "entrada": {"titulo_id": "TP431754", "fornecedor_id": "FP4345", "forma_pagamento": "boleto", "valor": 11740.0,
+                  "nf_normalizada": "1", "parcela": "1/1", "chave_nf": "X", "valor_duplicata": 11740.0,
+                  "raiz_fornecedor": "20623234", "raiz_beneficiario_boleto": "61525615",
+                  "cnpj_beneficiario_boleto": "61.525.615/0001-26",
+                  "troca_bancaria_suspeita": null, "duplicado_de": ""},
+      "checagens": {"esperado": {"decisao": "retirar", "acionar": "PS01"},
+                    "deve_conter": {"regras_violadas": ["boleto_beneficiario_diferente"]},
+                    "nao_deve_conter": {"decisao": ["liberar"]}}
+    },
+    {
+      "id": "10-aluguel-sem-nf-segue",
+      "entrada": {"titulo_id": "TP000004", "fornecedor_id": "FP0002", "forma_pagamento": "boleto", "valor": 15000.0,
+                  "nf_normalizada": "", "parcela": "1/1", "chave_nf": "", "valor_duplicata": null,
+                  "troca_bancaria_suspeita": null, "duplicado_de": ""},
       "checagens": {"esperado": {"decisao": "liberar"}}
     }
   ]

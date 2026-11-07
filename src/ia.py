@@ -4,6 +4,10 @@ Na camada 2 entra a API do Claude (chave no .env), com saída JSON validada e li
 NOMES = {
     "troca_bancaria_sem_confirmacao": "Conta bancária trocada sem confirmação",
     "duplicidade": "Possível pagamento em duplicidade",
+    "boleto_beneficiario_diferente": "Boleto com beneficiário diferente do fornecedor",
+    "nf_de_outro_fornecedor": "Título lançado no fornecedor errado",
+    "sem_nf_no_portal": "NF não encontrada no portal",
+    "valor_diferente_duplicata": "Valor diferente da duplicata",
 }
 
 

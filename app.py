@@ -6,11 +6,11 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 from coletor import montar_planilha_mae  # noqa: E402
-from guardiao import conferir  # noqa: E402
+from guardiao import casos, conferir  # noqa: E402
 
 st.set_page_config(page_title="Guardião do lote", layout="wide")
 st.title("Guardião do lote")
-st.caption("Gogroup (fictício) · referência 02/11/2026 08:00 · camada 1: troca bancária e duplicidade")
+st.caption("Gogroup (fictício) · referência 02/11/2026 08:00 · camada 1.1: 6 regras, ação por caso")
 
 
 @st.cache_data
@@ -31,20 +31,33 @@ c3.metric("Retidos (exceções)", f"{len(retidos)}", f"R$ {retidos.valor.sum():,
 
 aba_mae, aba_exc, aba_lote = st.tabs(["Planilha mãe", "Exceções", "Lote final"])
 COLS = ["lote_remessa", "titulo_id", "razao_social", "categoria", "numero_nf_digitado",
-        "nf_normalizada", "parcela", "valor", "vencimento", "forma_pagamento",
-        "destino_pagamento", "decisao", "regras_violadas", "acionar", "motivo"]
+        "nf_normalizada", "parcela", "valor", "valor_duplicata", "vencimento", "forma_pagamento",
+        "destino_pagamento", "decisao", "regras_violadas", "acao", "acionar", "caso_id", "motivo"]
+ACOES = {
+    "reverter_alteracao_cadastro": "Reverter a conta para a anterior (aprovação dupla)",
+    "cancelar_titulo": "Cancelar o título duplicado",
+    "corrigir_lancamento": "Corrigir o lançamento",
+    "contatar_fornecedor": "Confirmar o boleto com o fornecedor pelo canal do cadastro",
+    "retirar_do_lote": "Retirar do lote",
+}
 
 with aba_mae:
     st.dataframe(vis[COLS], use_container_width=True, hide_index=True)
 
 with aba_exc:
-    if retidos.empty:
+    cs = casos(vis)
+    if cs.empty:
         st.success("Nenhuma exceção neste lote.")
-    for _, t in retidos.iterrows():
+    else:
+        st.write(f"**{len(cs)} casos** · {(cs.acionar != '').sum()} precisam de uma pessoa; "
+                 "o resto o agente resolve dentro da alçada do analista.")
+    for _, c in cs.iterrows():
         with st.container(border=True):
-            st.markdown(f"**{t.titulo_id} · {t.razao_social} · R$ {t.valor:,.2f}** · vence {t.vencimento}")
-            st.write(t.motivo)
-            st.caption(f"Regras: {t.regras_violadas} · acionar: {t.acionar} · destino: {t.destino_pagamento}")
+            quem = c.acionar or "agente (dentro da alçada)"
+            st.markdown(f"**{c.fornecedor}** · {c.qtd} título(s) · **R$ {c.valor:,.2f}**")
+            st.write(c.motivo)
+            st.caption(f"Ação proposta: {ACOES.get(c.acao, c.acao)} · quem decide: {quem} · "
+                       f"regras: {c.regra} · títulos: {c.titulos}")
 
 with aba_lote:
     st.write(f"O que vai ao banco: **{len(seguem)} títulos · R$ {seguem.valor.sum():,.2f}**")

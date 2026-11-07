@@ -1,0 +1,46 @@
+"""Teste de integração na fila real (dados/ do evento): os 6 furos da verificação das 11:10."""
+import pathlib
+import sys
+
+import pytest
+
+RAIZ = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(RAIZ / "src"))
+pytestmark = pytest.mark.skipif(not (RAIZ / "dados" / "agenda_remessa.csv").exists(),
+                                reason="bases do evento não baixadas em dados/")
+
+
+@pytest.fixture(scope="module")
+def fila():
+    from coletor import montar_planilha_mae
+    from guardiao import conferir
+    return conferir(montar_planilha_mae()).set_index("titulo_id")
+
+
+@pytest.mark.parametrize("titulo, regra", [
+    ("TP431459", "valor_diferente_duplicata"),      # zero a mais, R$ 48.380 x 4.838
+    ("TP431775", "valor_diferente_duplicata"),      # zero a mais, R$ 90.873,80
+    ("TP431946", "nf_de_outro_fornecedor"),         # Cartonart x Gráfica Cartonar
+    ("TP432337", "nf_de_outro_fornecedor"),         # Polyfilm x Polifilm
+    ("TP431754", "boleto_beneficiario_diferente"),  # 2ª via falsa da Pigmentos Aquarela
+    ("TP432130", "troca_bancaria_sem_confirmacao"),  # Embalarte, R$ 96.480
+    ("TP430006", "duplicidade"),                     # Maciez NF 20329
+])
+def test_furo_e_retido(fila, titulo, regra):
+    assert fila.loc[titulo, "decisao"] != "liberar"
+    assert regra in fila.loc[titulo, "regras_violadas"]
+
+
+def test_parcelas_legitimas_seguem(fila):
+    for titulo in ["TP431762", "TP431763", "TP429834"]:
+        assert "duplicidade" not in fila.loc[titulo, "regras_violadas"]
+
+
+def test_embalarte_vira_um_caso_so(fila):
+    assert fila[fila.fornecedor_id == "FP4615"].caso_id.nunique() == 1
+
+
+def test_contagem_esperada(fila):
+    assert (fila.decisao != "liberar").sum() == 49
+    lote = fila[fila.lote_remessa == "RM20261103-MER"]
+    assert (lote.decisao != "liberar").sum() == 7

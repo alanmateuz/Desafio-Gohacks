@@ -80,3 +80,12 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   3. O eval 5/5 foi escrito pelo próprio agente dev, sem gabarito → passa, mas não cobre nenhum dos 6 furos. 100% no eval ≠ seguro.
   4. A análise inicial chamou Cartonart e Polyfilm só de "trocas legítimas para comparar" → são também os fornecedores que recebem os títulos lançados no fornecedor errado.
 - **Decisão (Mateus):** trazer 3 regras para a camada 1 (título × duplicata, raiz do CNPJ da NF, CNPJ do beneficiário do boleto) e corrigir as ações (cancelar duplicidade, 1 acionamento por caso). Implementação com o outro Claude; especificação no `contexto.md`.
+
+### [12:20] Camada 1.1: título × duplicata, fornecedor errado, beneficiário do boleto, ação por caso
+- **Decisão:** o coletor junta NF (raiz do CNPJ + número) e duplicata (parcela). Entram 4 regras novas: `valor_diferente_duplicata`, `nf_de_outro_fornecedor`, `sem_nf_no_portal` e `boleto_beneficiario_diferente`. Cada exceção recebe uma ação proposta de `ferramentas.csv`: duplicidade → `cancelar_titulo`; troca bancária → `reverter_alteracao_cadastro`; valor ou fornecedor errado → `corrigir_lancamento`; boleto → `contatar_fornecedor`. Os títulos são agrupados por caso (fornecedor + regra) e há 1 acionamento por caso, com a PS03 no lugar da PS01 quando o caso passa de R$ 50 mil. O painel mostra 1 card por caso.
+- **Resultado:** na fila inteira, **49 retidos** (R$ 483.642,28) em **21 casos**, sendo que só **13 precisam de uma pessoa**; os outros 8 ficam dentro da alçada do analista. No lote `RM20261103-MER`, **7 retidos** (os 6 de antes + TP431754, o boleto golpe) em 6 casos, com 3 acionamentos. Bate exatamente com a previsão da verificação das 11:10. pytest 21/21 (inclui um teste de integração na fila real com os 6 furos) e eval 10/10.
+- **Descartei:** conferir `confirmacao_como` (sem efeito nos dados de hoje), reprocessar a cada tique, IA real (camada 2) e botões de aprovação (camada 3).
+- **IA errou?**
+  1. O dev escreveu `abs(valor − duplicata) > 0,10`. Em ponto flutuante, 1000,10 − 1000,00 = 0,1000000000000227, e uma diferença de exatamente 10 centavos, que a política aceita, seria barrada. Um teste novo pegou o erro; a correção foi arredondar a diferença para centavos.
+  2. Os casos 01 e 05 do eval falharam depois da mudança, porque foram escritos sem as colunas da NF. O guardião acertou ao acionar quem não tem NF no portal; a entrada dos casos foi atualizada para o formato novo.
+- **Ainda é gabarito do dev, não do Mateus.** O /testes precisa confirmar.
