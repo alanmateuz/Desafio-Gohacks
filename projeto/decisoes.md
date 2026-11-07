@@ -33,3 +33,9 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Por quê:** era a ideia do Mateus. O agente propôs que a IA só leia e-mails e boletos e escreva o motivo, enquanto a decisão de liberar fica com o código ou a pessoa (código para regra, IA para linguagem, humano para a palavra final).
 - **Descartei:** "automatizar lançamentos" no sentido de lançar títulos a partir do XML. O Mateus esclareceu que quis dizer coletar das fontes e montar a planilha final. Descartei também a IA decidindo sozinha.
 - **IA errou?** O agente entendeu "lançamentos" como lançar títulos no ERP. O Mateus corrigiu: era a coleta das plataformas até a planilha final.
+
+### [11:45] Camada 1 rodando ponta a ponta (v1-demo)
+- **Decisão:** coletor → planilha mãe → 2 regras em código (troca bancária sem confirmação, duplicidade por NF normalizada + fornecedor + parcela) → resolver → painel Streamlit (planilha mãe, exceções, lote final). Motivo escrito em modo simulado, sem IA.
+- **Resultado:** fila inteira com 876 títulos e R$ 10.206.764,09. Seguem 838 (R$ 9.907.060,39); retidos 38 (R$ 299.703,70), sendo 25 por troca bancária (R$ 194.440,08, todos da Embalarte) e 13 por duplicidade (R$ 105.263,62). No lote `RM20261103-MER` (192 títulos), 6 foram retidos, entre eles os 2 da Embalarte e o TP430006 da Maciez; o TP429834 seguiu. pytest 6/6, eval 5/5.
+- **Descartei:** por enquanto, 3 vias, alçada e IA real (ficam para a camada 2).
+- **IA errou?** Na análise inicial, o agente contou 67 "grupos com mesmo fornecedor e valor" como possíveis duplicidades. Ao comparar NF normalizada **e parcela**, sobraram 13, porque parcelas legítimas têm o mesmo valor. Ainda falta conferir os 13 no gabarito.

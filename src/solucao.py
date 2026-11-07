@@ -1,24 +1,33 @@
-"""Ponto de entrada da solução. O eval/run.py chama resolver(entrada) para cada caso.
+"""Guardião do lote. O eval/run.py chama resolver(titulo) para cada caso.
 
-Stub de exemplo para o eval rodar ponta a ponta. Substitua no dia:
-camada 1 = fluxo feio que funciona; depois validação, aprovação humana e config.
+Camada 1: regras de troca bancária e duplicidade + motivo em modo simulado (sem IA).
 """
-from regras import tem_termo_proibido, validar_saida
+from ia import escrever_motivo
+from regras import avaliar, validar_saida
 
 
-def resolver(entrada: dict) -> dict:
-    texto = entrada.get("texto", "")
+def resolver(titulo: dict) -> dict:
+    # Dado faltando: não dá para conferir, então nunca libera
+    if not titulo.get("titulo_id") or not titulo.get("fornecedor_id"):
+        return {"decisao": "acionar", "regras_violadas": ["dado_faltando"], "acionar": "PS01",
+                "motivo": "Título sem identificação ou sem fornecedor; não é possível conferir."}
 
-    # 1. Código para regra: o que é checável não depende da IA.
-    if not texto.strip():
-        return {"decisao": "revisar", "motivo": "entrada sem texto"}
-    if tem_termo_proibido(texto):
-        return {"decisao": "revisar", "motivo": "termo proibido"}
+    # 1. Código para regra
+    violacoes = avaliar(titulo)
+    if not violacoes:
+        saida = {"decisao": "liberar", "regras_violadas": [], "acionar": None,
+                 "motivo": "Nenhuma regra violada."}
+    else:
+        saida = {
+            "decisao": "retirar",
+            "regras_violadas": [v["regra"] for v in violacoes],
+            "acionar": violacoes[0]["acionar"],
+            # 2. IA para linguagem (simulada na camada 1): só escreve, não decide
+            "motivo": escrever_motivo(titulo, violacoes),
+        }
 
-    # 2. IA para linguagem: aqui entraria a chamada ao modelo, pedindo JSON com schema.
-    saida = {"decisao": "aprovar", "motivo": "sem problemas encontrados"}
-
-    # 3. Confere a saída da IA; se vier inválida, vai para o humano.
+    # 3. Confere a saída antes de usar; inválida vai para a pessoa
     if validar_saida(saida):
-        return {"decisao": "revisar", "motivo": "saída da IA inválida"}
+        return {"decisao": "acionar", "regras_violadas": ["saida_invalida"], "acionar": "PS01",
+                "motivo": "Saída do guardião inválida; revisar manualmente."}
     return saida

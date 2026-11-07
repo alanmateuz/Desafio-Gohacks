@@ -10,3 +10,6 @@ node_modules/
 .promptfoo/
 .DS_Store
 *.log
+
+# Bases do evento (baixadas do Drive)
+dados/
