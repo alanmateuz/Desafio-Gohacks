@@ -129,6 +129,7 @@ div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font
 [data-testid="stSelectbox"] [role="group"]{ border:1px solid #d5dbe4 !important; }
 [data-testid="stTextInputRootElement"]:focus-within, [data-testid="stMultiSelect"] [role="group"]:focus-within{ border-color:var(--azul) !important; }
 .st-key-lote [role="group"]{ background:transparent !important; border:none !important; }
+[data-testid="stLayoutWrapper"] [data-testid="stVerticalBlock"]{ background:var(--branco) !important; border-radius:18px; }
 </style>
 """, unsafe_allow_html=True)
 
