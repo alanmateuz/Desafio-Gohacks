@@ -44,3 +44,30 @@ def test_contagem_esperada(fila):
     assert (fila.decisao != "liberar").sum() == 49
     lote = fila[fila.lote_remessa == "RM20261103-MER"]
     assert (lote.decisao != "liberar").sum() == 7
+
+
+def test_ia_nunca_libera_o_que_as_regras_seguraram(fila):
+    """Segurança: com ou sem a leitura da IA, nenhum título retido pelas regras passa a ser liberado."""
+    from coletor import montar_planilha_mae
+    from guardiao import conferir
+    sem_ia = conferir(montar_planilha_mae(com_ia=False)).set_index("titulo_id")
+    retidos_sem_ia = set(sem_ia[sem_ia.decisao != "liberar"].index)
+    retidos_com_ia = set(fila[fila.decisao != "liberar"].index)
+    assert retidos_sem_ia <= retidos_com_ia
+
+
+def test_evidencia_dos_emails_nos_golpes(fila):
+    assert "pedido_troca_por_email_suspeito" in fila.loc["TP432130", "regras_violadas"]
+    assert "embalartte" in fila.loc["TP432130", "motivo"]
+    assert "boleto_de_email_fora_do_cadastro" in fila.loc["TP431754", "regras_violadas"]
+
+
+def test_alertas_da_caixa(fila):
+    from guardiao import alertas_caixa
+    al = alertas_caixa(fila)
+    assert set(al.alerta) == {"phishing_na_caixa", "tentativa_de_instruir_agente"}
+    assert "EM570998" in al[al.alerta == "phishing_na_caixa"].emails.iloc[0]  # falso cartório que o Jev erra
+
+
+def test_alcada_vira_aprovacao_no_lote(fila):
+    assert (fila.aprovacao == "PS03").sum() == 19

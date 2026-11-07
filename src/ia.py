@@ -8,6 +8,9 @@ NOMES = {
     "nf_de_outro_fornecedor": "Título lançado no fornecedor errado",
     "sem_nf_no_portal": "NF não encontrada no portal",
     "valor_diferente_duplicata": "Valor diferente da duplicata",
+    "fracionamento_alcada": "Valor dividido para caber na alçada",
+    "pedido_troca_por_email_suspeito": "Evidência",
+    "boleto_de_email_fora_do_cadastro": "Evidência",
 }
 
 

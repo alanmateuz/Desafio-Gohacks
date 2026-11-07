@@ -47,6 +47,30 @@ def chave_duplicidade(fornecedor_id: str, numero_nf: str, parcela: str) -> tuple
     return (fornecedor_id, nf, str(parcela).strip())
 
 
+SUSPEITAS = {
+    "dominio_parecido": "domínio parecido com o do cadastro",
+    "remetente_fora_do_cadastro": "remetente fora do cadastro",
+    "tentativa_de_instruir_agente": "texto tenta dar ordem ao agente",
+}
+
+
+def _fato_email(e: dict) -> str:
+    fato = (f"o pedido veio de {e['remetente']} ({SUSPEITAS.get(e.get('suspeita'), e.get('suspeita'))})"
+            f" em {str(e.get('data_hora', ''))[:10]}, e-mail {e['comunicacao_id']}")
+    if e.get("tenta_instruir_agente") and e.get("trecho"):
+        fato += f"; o texto tenta instruir o robô: \"{e['trecho']}\""
+    return fato
+
+
+def aprovacao_necessaria(valor: float) -> str | None:
+    """Quem precisa aprovar no lote (alçadas de politicas.csv). Não retém: a aprovação é em lote."""
+    if valor > 50000:
+        return "PS03"
+    if valor > ALCADA_ANALISTA:
+        return APROVADOR
+    return None
+
+
 def _vazio(valor) -> bool:
     return valor is None or valor == "" or (isinstance(valor, float) and valor != valor)
 
@@ -99,6 +123,31 @@ def avaliar(titulo: dict) -> list[dict]:
                 "regra": "sem_nf_no_portal",
                 "decisao": "acionar", "acao": "retirar_do_lote", "acionar": RENATA,
                 "fato": f"a NF {titulo['nf_normalizada']} não existe no portal para este fornecedor",
+            })
+
+    if titulo.get("fracionado_com"):
+        violacoes.append({
+            "regra": "fracionamento_alcada",
+            "decisao": "retirar", "acao": "solicitar_aprovacao", "acionar": APROVADOR,
+            "fato": f"títulos da mesma NF no mesmo dia somam acima da alçada do analista "
+                    f"(com {titulo['fracionado_com']}); dividir para caber na alçada é proibido",
+        })
+
+    # Evidência dos e-mails (IA lê, código decide): só REFORÇA uma regra que já disparou
+    regras_disparadas = {v["regra"] for v in violacoes}
+    for e in titulo.get("emails_suspeitos") or []:
+        if "troca_bancaria_sem_confirmacao" in regras_disparadas and e.get("pede_troca_bancaria"):
+            violacoes.append({
+                "regra": "pedido_troca_por_email_suspeito",
+                "decisao": "retirar", "acao": "reverter_alteracao_cadastro", "acionar": RENATA,
+                "fato": _fato_email(e),
+            })
+        elif "boleto_beneficiario_diferente" in regras_disparadas and e.get("suspeita") in {
+                "remetente_fora_do_cadastro", "dominio_parecido"}:
+            violacoes.append({
+                "regra": "boleto_de_email_fora_do_cadastro",
+                "decisao": "retirar", "acao": "contatar_fornecedor", "acionar": RENATA,
+                "fato": _fato_email(e),
             })
 
     vdup = titulo.get("valor_duplicata")

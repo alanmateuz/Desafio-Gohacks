@@ -14,7 +14,38 @@ def _ler(nome: str) -> pd.DataFrame:
     return pd.read_csv(DADOS / nome, dtype=str, keep_default_na=False)
 
 
-def montar_planilha_mae(referencia: datetime = REFERENCIA) -> pd.DataFrame:
+def montar_planilha_mae(referencia: datetime = REFERENCIA, com_ia: bool = True) -> pd.DataFrame:
+    mae = _montar_base(referencia)
+    mae = _marcar_fracionamento(mae)
+    from emails import carregar_caixa, suspeita_do_email, trecho_suspeito
+    caixa = carregar_caixa(com_ia=com_ia)
+    caixa["suspeita"] = [suspeita_do_email(e) for e in caixa.to_dict("records")]
+    caixa["trecho"] = caixa["texto"].map(trecho_suspeito)
+    suspeitos = caixa[(caixa.suspeita != "") & (caixa.fornecedor_id != "")]
+    por_forn = {f: g[["comunicacao_id", "remetente", "suspeita", "pede_troca_bancaria",
+                      "tenta_instruir_agente", "conta_citada", "trecho", "data_hora"]].to_dict("records")
+                for f, g in suspeitos.groupby("fornecedor_id")}
+    mae["emails_suspeitos"] = mae["fornecedor_id"].map(lambda f: por_forn.get(f, []))
+    mae.attrs["caixa"] = caixa
+    return mae
+
+
+def _marcar_fracionamento(mae: pd.DataFrame) -> pd.DataFrame:
+    """Mesma NF, mesmo fornecedor, mesmo lote, todos abaixo da alçada do analista mas somando acima.
+    Duplicidades ficam de fora (já têm regra própria)."""
+    from regras import ALCADA_ANALISTA
+    mae["fracionado_com"] = ""
+    candidatos = mae[(mae.nf_normalizada != "") & (mae.duplicado_de == "")]
+    for _, g in candidatos.groupby(["fornecedor_id", "nf_normalizada", "lote_remessa"]):
+        if len(g) > 1 and (g.valor <= ALCADA_ANALISTA).all() and g.valor.sum() > ALCADA_ANALISTA:
+            for i, t in g.iterrows():
+                outros = g.drop(i)
+                mae.at[i, "fracionado_com"] = ", ".join(
+                    f"{o.titulo_id} (R$ {o.valor:,.2f})" for o in outros.itertuples())
+    return mae
+
+
+def _montar_base(referencia: datetime) -> pd.DataFrame:
     agenda = _ler("agenda_remessa.csv")
     titulos = _ler("contas_a_pagar.csv")
     fornecedores = _ler("fornecedores.csv")

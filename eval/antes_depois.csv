@@ -1,0 +1,7 @@
+etapa,o que mede,antes,depois,observação
+Regras do guardião (eval/casos.json),26 casos com gabarito,22/26 (85%) na camada 1.1,26/26 (100%) na camada 2,faltavam alçada/fracionamento e evidência dos e-mails
+Leitura de e-mails pela IA (eval/run_emails.py),30 e-mails com gabarito,29/30 (97%) rodada 1,29-30/30 (97-100%) em 4 repetições,o único erro (falso cartório) sempre vai para revisão e é pego pelo código pelo domínio
+Fila inteira: títulos retidos,876 títulos (R$ 10,2 mi),38 (camada 1),49 (camada 1.1 e 2),a IA não liberou nem segurou nenhum título por conta própria
+Fila inteira: dinheiro que sairia indevidamente,R$ na fila,~R$ 466 mil sem guardião,R$ 0 retido indevidamente no gabarito,valores de projeto/01-problema.md (verificação das 11:10)
+Acionamentos de pessoas,1 por caso,25+ só na Embalarte (1 por título),15 no total (13 casos + 2 alertas da caixa),cada acionamento desnecessário custa R$ 60
+Custo da IA,leitura dos 246 e-mails,—,US$ 0.0059,Jev do AI Proxy; leituras em cache não custam de novo

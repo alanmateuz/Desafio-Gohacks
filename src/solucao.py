@@ -3,7 +3,7 @@
 Camada 1.1: 6 regras em código, ação proposta por caso e motivo em modo simulado (sem IA).
 """
 from ia import escrever_motivo
-from regras import avaliar, validar_saida
+from regras import aprovacao_necessaria, avaliar, validar_saida
 
 
 def resolver(titulo: dict) -> dict:
@@ -29,6 +29,9 @@ def resolver(titulo: dict) -> dict:
             # 2. IA para linguagem (simulada): só escreve, não decide
             "motivo": escrever_motivo(titulo, violacoes),
         }
+
+    # Alçada: quem precisa aprovar este título no lote (roteamento, não retenção)
+    saida["aprovacao"] = aprovacao_necessaria(float(titulo.get("valor") or 0))
 
     # 3. Confere a saída antes de usar; inválida vai para a pessoa
     if validar_saida(saida):
