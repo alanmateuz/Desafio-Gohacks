@@ -80,3 +80,28 @@ def test_duplicidade_cancela_e_so_aciona_acima_da_alcada():
     grande = avaliar({**BASE, "duplicado_de": "TP0", "valor": 6000.0, "valor_duplicata": 6000.0})[0]
     assert pequena["acao"] == "cancelar_titulo" and pequena["acionar"] is None
     assert grande["acionar"] == "PS01"
+
+
+# --- decisões humanas (camada 3) ---
+import decisoes_humanas as dh  # noqa: E402
+
+
+def test_efeito_das_decisoes_no_lote():
+    assert dh.volta_ao_lote("reverter_alteracao_cadastro", {"decisao": "aprovar"})
+    assert not dh.volta_ao_lote("cancelar_titulo", {"decisao": "aprovar"})
+    assert dh.volta_ao_lote("cancelar_titulo", {"decisao": "liberar"})
+    assert not dh.volta_ao_lote("corrigir_lancamento", {"decisao": "manter"})
+    assert not dh.volta_ao_lote("corrigir_lancamento", {"decisao": "revisar"})
+    assert not dh.volta_ao_lote("corrigir_lancamento", None)
+
+
+def test_retirada_manual_e_devolucao(tmp_path, monkeypatch):
+    monkeypatch.setattr(dh, "ARQUIVO", tmp_path / "d.json")
+    dh.retirar_manual("TP1", "fornecedor não reconhece a nota", "teste")
+    assert "TP1" in dh.manuais()
+    dh.registrar("FP1:duplicidade", "manter", "teste")
+    dh.anotar("FP1:duplicidade", "liguei no telefone do cadastro", "PS01", "teste")
+    assert dh.carregar()["FP1:duplicidade"]["decisao"] == "manter"
+    assert dh.carregar()["FP1:duplicidade"]["nota"] == "liguei no telefone do cadastro"
+    dh.devolver_manual("TP1")
+    assert dh.manuais() == {}

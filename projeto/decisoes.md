@@ -34,7 +34,7 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Descartei:** "automatizar lançamentos" no sentido de lançar títulos a partir do XML. O Mateus esclareceu que quis dizer coletar das fontes e montar a planilha final. Descartei também a IA decidindo sozinha.
 - **IA errou?** O agente entendeu "lançamentos" como lançar títulos no ERP. O Mateus corrigiu: era a coleta das plataformas até a planilha final.
 
-### [11:45] Camada 1 rodando ponta a ponta (v1-demo)
+### [10:47] Camada 1 rodando ponta a ponta (v1-demo)
 - **Decisão:** coletor → planilha mãe → 2 regras em código (troca bancária sem confirmação, duplicidade por NF normalizada + fornecedor + parcela) → resolver → painel Streamlit (planilha mãe, exceções, lote final). Motivo escrito em modo simulado, sem IA.
 - **Resultado:** fila inteira com 876 títulos e R$ 10.206.764,09. Seguem 838 (R$ 9.907.060,39); retidos 38 (R$ 299.703,70), sendo 25 por troca bancária (R$ 194.440,08, todos da Embalarte) e 13 por duplicidade (R$ 105.263,62). No lote `RM20261103-MER` (192 títulos), 6 foram retidos, entre eles os 2 da Embalarte e o TP430006 da Maciez; o TP429834 seguiu. pytest 6/6, eval 5/5.
 - **Descartei:** por enquanto, 3 vias, alçada e IA real (ficam para a camada 2).
@@ -81,7 +81,7 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   4. A análise inicial chamou Cartonart e Polyfilm só de "trocas legítimas para comparar" → são também os fornecedores que recebem os títulos lançados no fornecedor errado.
 - **Decisão (Mateus):** trazer 3 regras para a camada 1 (título × duplicata, raiz do CNPJ da NF, CNPJ do beneficiário do boleto) e corrigir as ações (cancelar duplicidade, 1 acionamento por caso). Implementação com o outro Claude; especificação no `contexto.md`.
 
-### [12:20] Camada 1.1: título × duplicata, fornecedor errado, beneficiário do boleto, ação por caso
+### [11:23] Camada 1.1: título × duplicata, fornecedor errado, beneficiário do boleto, ação por caso
 - **Decisão:** o coletor junta NF (raiz do CNPJ + número) e duplicata (parcela). Entram 4 regras novas: `valor_diferente_duplicata`, `nf_de_outro_fornecedor`, `sem_nf_no_portal` e `boleto_beneficiario_diferente`. Cada exceção recebe uma ação proposta de `ferramentas.csv`: duplicidade → `cancelar_titulo`; troca bancária → `reverter_alteracao_cadastro`; valor ou fornecedor errado → `corrigir_lancamento`; boleto → `contatar_fornecedor`. Os títulos são agrupados por caso (fornecedor + regra) e há 1 acionamento por caso, com a PS03 no lugar da PS01 quando o caso passa de R$ 50 mil. O painel mostra 1 card por caso.
 - **Resultado:** na fila inteira, **49 retidos** (R$ 483.642,28) em **21 casos**, sendo que só **13 precisam de uma pessoa**; os outros 8 ficam dentro da alçada do analista. No lote `RM20261103-MER`, **7 retidos** (os 6 de antes + TP431754, o boleto golpe) em 6 casos, com 3 acionamentos. Bate exatamente com a previsão da verificação das 11:10. pytest 21/21 (inclui um teste de integração na fila real com os 6 furos) e eval 10/10.
 - **Descartei:** conferir `confirmacao_como` (sem efeito nos dados de hoje), reprocessar a cada tique, IA real (camada 2) e botões de aprovação (camada 3).
@@ -90,7 +90,7 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   2. Os casos 01 e 05 do eval falharam depois da mudança, porque foram escritos sem as colunas da NF. O guardião acertou ao acionar quem não tem NF no portal; a entrada dos casos foi atualizada para o formato novo.
 - **Ainda é gabarito do dev, não do Mateus.** O /testes precisa confirmar.
 
-### [12:50] /testes, rodada 1 da IA: leitura de e-mails com o Jev (AI Proxy)
+### [11:57] /testes, rodada 1 da IA: leitura de e-mails com o Jev (AI Proxy)
 - **Decisão:** a IA é o **Jev** do AI Proxy do evento (`/v1/systemone`), e não o Claude, porque o token liberado é do proxy, no formato OpenAI. Ele responde 3 perguntas sobre o texto: pede troca de conta?, tenta dar ordem ao agente? e tipo. Banco, conta e CNPJ citados ficam com o código. A saída é validada contra um schema, com até 2 tentativas; se falhar, vai para uma pessoa. Confiança abaixo de 0,7 → revisão. Prompt em `src/leitor_email.py` (`ler_email_v1`).
 - **Gabarito:** `eval/gabarito_emails.csv`, com 30 e-mails (25 da base e 5 inventados e marcados), **confirmado pelo Mateus**. Ponto 1 (a 2ª via falsa da Pigmentos é `cobranca`: quem pega é o código) e ponto 2 (o falso cartório não instrui o agente) aceitos. O ponto 3 (INV004) é verificado com um par no cadastro: confirmada → segue; sem confirmação → retida.
 - **Resultado (4 repetições sem cache):**
@@ -110,7 +110,7 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   2. O dev (agente) errou o cache: com `--sem-cache`, o arquivo era regravado só com a última leitura → percebi porque uma leitura que devia vir do cache chamou o Jev de novo → corrigido para sempre carregar o cache antes de gravar.
   3. A primeira chamada ao Jev deu 403 (o Cloudflare bloqueia o User-Agent padrão do Python) → corrigido com um User-Agent próprio.
 
-### [13:20] /testes, rodada 2: IA ligada às regras (camada 2) e gabarito de 26 casos
+### [12:08] /testes, rodada 2: IA ligada às regras (camada 2) e gabarito de 26 casos
 - **Decisão:** a caixa de e-mail é ligada ao fornecedor pelo código (endereço ou domínio do cadastro, nome ou CNPJ citado; domínio parecido → `dominio_parecido`; nome sem domínio do cadastro → `remetente_fora_do_cadastro`). A leitura do Jev **só reforça** uma regra que já disparou (`pedido_troca_por_email_suspeito`, `boleto_de_email_fora_do_cadastro`) e gera **alertas da caixa** (phishing → PS08 jurídico; tentativa de instruir o agente → PS01), sem reter título limpo.
 - **Alçada (mudança no gabarito, por causa dos dados):** nenhum dos 876 títulos da fila tem aprovação, e isso é o normal: 2.669 de 2.760 aprovações em `aprovacoes.csv` são "em lote" no dia do pagamento. Reter acima de R$ 5 mil sem aprovação seguraria 533 títulos legítimos. Por isso a alçada virou **roteamento** (514 títulos para o aprovador e 19 para a diretora PS03 no lote) e só **fracionamento** retém (0 casos na fila; a regra é testada no eval).
 - **Resultado:** gabarito de 26 casos (21 confirmados + par INV004 + 3 de evidência da IA): **antes 22/26 (85%) → depois 26/26 (100%)**. Na fila inteira continuam **49 retidos**: a IA não mudou nenhuma decisão, só acrescentou evidência a 26 títulos (Embalarte e Pigmentos) e 2 alertas da caixa. Acionamentos: 15 (13 casos de título + 2 alertas). Leitura dos 246 e-mails: US$ 0,0059, 0 falhas depois da nova tentativa. pytest 25/25, incluindo o teste de segurança "a IA nunca libera o que as regras seguraram".
@@ -120,14 +120,25 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   1. Na 1ª leitura dos 246 e-mails, 1 falhou (EM570938, falha passageira no proxy compartilhado) → foi para revisão, não liberou nada → na nova tentativa leu certo (confiança 0,96).
   2. O agente havia proposto a alçada como "reter sem aprovação" → os dados mostraram que a aprovação é em lote no dia → corrigido para roteamento, com o Mateus avisado.
 
-### [14:10] Painel com a identidade Gogroup (camada 3 incluída)
+### [12:38] Painel com a identidade Gogroup (camada 3 incluída)
 - **Decisão:** painel Streamlit com tema próprio, seguindo o brandbook: azul `#2659a5` como protagonista, Poppins, pílulas, blocos de cantos arredondados (color blocking azul + limão com texto escuro) e logo oficial recortado do brandbook (`assets/`). Telas, na ordem da tarefa: visão do lote (próximo envio, "precisa da sua decisão", 4 números), **Exceções** (1 card por caso, com evidência do e-mail e os botões da ação proposta / "Liberar mesmo assim" / desfazer), **Caixa de e-mail** (246 leituras da IA, suspeitos pelo código, revisão), **Planilha mãe** (busca e filtros) e **Lote final** (o que vai ao banco, aprovação necessária e CSV). As decisões ficam em `dados/decisoes_humanas.json` (`src/decisoes_humanas.py`).
 - **Por quê:** o Mateus pediu o sistema num painel com a identidade Gogroup, minimalista e profissional, usando as skills de UI/UX (estado sempre com texto + ícone, um botão principal por card, valores em R$ com lote e período, estados vazio, simulado e falha).
 - **Descartei:** reescrever em HTML/JS separado (mais bonito, porém sem tempo antes de congelar o código às 15h30).
 - **IA errou?** Ao testar o painel, o agente percebeu que, depois de "Aprovar reversão da conta", os títulos da Embalarte voltavam ao lote **com o destino ainda na conta do golpista** (905). Corrigido: o coletor guarda `destino_anterior` (774/7166/9517944-5) e o lote final usa a conta anterior e o valor da duplicata nas correções. Há um teste novo para isso (`test_reversao_paga_na_conta_anterior`). pytest 26/26.
 
-### [14:45] Revisão visual do painel (feedback do Mateus)
+### [13:02] Revisão visual do painel (feedback do Mateus)
 - **Feedback:** "precisa de uma revisão visual; as informações monetárias devem ter mais destaque; muitas coisas cortadas ou mal feitas". Ele mandou 2 telas de referência de sistemas de gestão financeira e pediu **sem menu lateral**.
 - **Decisão:** barra superior (logo, pílula, status da IA); cabeçalho com o lote e o seletor; **4 KPIs no estilo das referências** (bloco de ícone colorido + **R$ em destaque**: vai ao banco, protegido, precisa de decisão, pessoas acionadas); **navegação por pílulas** (Exceções · Lote final · Caixa de e-mail · Planilha mãe · Resumo da fila), uma seção por vez; cada seção num painel branco com **tabela compacta**, valores alinhados à direita e selos com texto e ícone. Nada cortado: tabelas HTML com quebra de linha; larguras definidas na planilha mãe.
 - **Descartei:** menu lateral (o Mateus não quis) e a rolagem de uma página só.
 - **IA errou?** A 1ª versão tinha cortes (título quebrando, colunas truncadas) e R$ pequenos → corrigido com o feedback do Mateus e conferido no navegador em 1366 px.
+
+### [13:12] Ações sobre as suspeitas ("CRUD") para o app ser autônomo
+- **Pedido do Mateus:** poder agir sobre suspeitas e casos (por exemplo, tirar da contagem final), como um CRUD.
+- **Decisão:**
+  - **criar:** retirar qualquer título do lote, com motivo (aba Lote final);
+  - **ler:** a aba Exceções lista os casos do agente e as retiradas manuais;
+  - **atualizar:** aprovar a ação, liberar mesmo assim, **manter fora do lote**, nota e responsável;
+  - **excluir:** desfazer uma decisão, **desfazer uma ação automática do agente** (o caso volta para uma pessoa) e devolver o título ao lote.
+
+  Tudo grava quem e quando em `dados/decisoes_humanas.json` (`src/decisoes_humanas.py`). O agente continua resolvendo sozinho o que está dentro da alçada do analista, mas qualquer ação dele pode ser revertida no painel. Os testes de unidade passaram (pytest 28/28).
+- **IA errou?** Os horários dos registros [11:45], [12:20], [12:50], [13:20], [14:10] e [14:45] foram **estimados pelo agente e estavam adiantados**. Foram corrigidos para os horários reais dos commits (10:47, 11:23, 11:57, 12:08, 12:38 e 13:02). O conteúdo não mudou.

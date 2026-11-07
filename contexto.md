@@ -1,6 +1,6 @@
 # Contexto do projeto (handoff para outro Claude)
 
-Atualizado em 07/11/2026, ~14h20 (camadas 1.1, 2 e 3 prontas; painel com a identidade Gogroup; próximo passo: revisão visual do painel). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
+Atualizado em 07/11/2026, ~12h55 (camadas 1.1, 2 e 3 prontas; painel com a identidade Gogroup; próximo passo: revisão visual do painel). Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
 
 ## Quem e o quê
 - **Mateus** (git: `alanmateuz`) participa do **GoHacks Talent**, um hackathon individual de 1 dia. A construção vai das 9h40 às 16h30, o código congela às 15h30 e a submissão fecha às 16h30.
@@ -166,7 +166,7 @@ python -m streamlit run app.py            # painel em http://localhost:8501
 | Arquivo | O que faz |
 |---|---|
 | `src/coletor.py` | `montar_planilha_mae(com_ia=True)`: junta fila, títulos, fornecedores, alterações, NF, duplicata e caixa de e-mail. Calcula `nf_normalizada`, `troca_bancaria_suspeita`, `destino_anterior` (conta de antes da troca), `duplicado_de`, `valor_duplicata`, `nf_outro_fornecedor`, `raiz_beneficiario_boleto`, `fracionado_com` e `emails_suspeitos`. A caixa vai em `mae.attrs["caixa"]` |
-| `src/regras.py` | Regras em código, em ordem de prioridade: troca bancária sem confirmação; boleto com beneficiário de outra raiz; duplicidade (NF + parcela); fracionamento de alçada; NF de outro fornecedor ou sem NF no portal; valor ≠ duplicata (tolerância de R$ 0,10, com arredondamento para centavos). A evidência dos e-mails (`pedido_troca_por_email_suspeito`, `boleto_de_email_fora_do_cadastro`) **só reforça** uma regra que já disparou. `aprovacao_necessaria(valor)` devolve aprovador (> R$ 5 mil) ou PS03 (> R$ 50 mil): é **roteamento no lote, não retenção**, porque a aprovação é em lote no dia (ver `decisoes.md` [13:20]) |
+| `src/regras.py` | Regras em código, em ordem de prioridade: troca bancária sem confirmação; boleto com beneficiário de outra raiz; duplicidade (NF + parcela); fracionamento de alçada; NF de outro fornecedor ou sem NF no portal; valor ≠ duplicata (tolerância de R$ 0,10, com arredondamento para centavos). A evidência dos e-mails (`pedido_troca_por_email_suspeito`, `boleto_de_email_fora_do_cadastro`) **só reforça** uma regra que já disparou. `aprovacao_necessaria(valor)` devolve aprovador (> R$ 5 mil) ou PS03 (> R$ 50 mil): é **roteamento no lote, não retenção**, porque a aprovação é em lote no dia (ver `decisoes.md` [12:08]) |
 | `src/solucao.py` | `resolver(titulo)` → `{decisao, regras_violadas, acao, acionar, caso_id, motivo, aprovacao}` |
 | `src/guardiao.py` | `conferir(mae)`; `casos(df)`, com 1 acionamento por fornecedor + regra e PS03 quando o caso passa de R$ 50 mil; `alertas_caixa(df)`, com phishing → PS08 (jurídico) e tentativa de instruir o agente → PS01 |
 | `src/leitor_email.py` | Jev (`/v1/systemone`): 3 perguntas, schema validado, 2 tentativas, cache em `dados/cache_ia.json`. **O Cloudflare do proxy bloqueia o User-Agent padrão do Python (erro 1010): mande `User-Agent: guardiao-do-lote/1.0`** |
@@ -194,7 +194,7 @@ python -m streamlit run app.py            # painel em http://localhost:8501
 
 O `dados/decisoes_humanas.json` foi apagado para a demo começar limpa.
 
-## Próximo passo: revisão visual do painel (pedido do Mateus às 14h20)
+## Próximo passo: revisão visual do painel (pedido do Mateus às 12h50)
 O Mateus disse: "o site está até bom, mas precisa de uma revisão visual. É uma tela onepager. As informações monetárias devem ter um destaque maior. Tem muitas coisas cortadas ou mal feitas."
 
 Ele mandou **2 telas de referência** (prints de sistemas de gestão financeira), que mostram:

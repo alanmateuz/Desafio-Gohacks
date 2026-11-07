@@ -190,19 +190,27 @@ vis = df if escolha == "fila" else df[df.lote_remessa == escolha]
 cs = casos(vis)
 
 
+USUARIO = "Usuário do painel"
+
+
 def decisao_efetiva(c):
-    if c.caso_id in decisoes:
-        return decisoes[c.caso_id]
+    d = decisoes.get(c.caso_id)
+    if d and d.get("decisao") in ("aprovar", "liberar", "manter"):
+        return d
+    if d and d.get("decisao") == "revisar":  # ação automática desfeita: volta para uma pessoa
+        return None
     if not c.acionar:
-        return {"decisao": "aprovar", "quem": "Agente (alçada do analista)", "quando": "automático"}
+        return {"decisao": "aprovar", "quem": "Agente (alçada do analista)", "quando": "automático", "auto": True}
     return None
 
 
+manuais = dh.manuais()
 cs["efetiva"] = [decisao_efetiva(c) for c in cs.itertuples()]
 cs["volta"] = [dh.volta_ao_lote(c.acao, c.efetiva) for c in cs.itertuples()]
 voltam = set(t.strip() for c in cs[cs.volta].itertuples() for t in c.titulos.split(","))
-seguem = vis[(vis.decisao == "liberar") | vis.titulo_id.isin(voltam)]
-retidos = vis[(vis.decisao != "liberar") & ~vis.titulo_id.isin(voltam)]
+fora_manual = vis.titulo_id.isin(manuais.keys())
+seguem = vis[((vis.decisao == "liberar") | vis.titulo_id.isin(voltam)) & ~fora_manual]
+retidos = vis[((vis.decisao != "liberar") & ~vis.titulo_id.isin(voltam)) | fora_manual]
 pendentes = cs[cs.efetiva.isna()]
 al_vis = alertas if escolha == "fila" else alertas.iloc[0:0]
 alertas_pend = [a for a in al_vis.itertuples() if f"alerta:{a.alerta}:{a.fornecedor}" not in decisoes] if len(al_vis) else []
@@ -221,7 +229,7 @@ st.markdown('<div class="kpis">'
             + kpi("alerta", "#f8ae13", "Precisa da sua decisão", f"{n_pend} caso(s)",
                   brl(pendentes.valor.sum()) + " aguardando")
             + kpi("pessoa", "#3dbfef", "Pessoas acionadas", str((cs.acionar != "").sum() + len(al_vis)),
-                  f"{(cs.acionar == '').sum()} casos resolvidos pelo agente")
+                  f"{sum(1 for x in cs.efetiva if x and x.get('auto'))} casos resolvidos pelo agente")
             + "</div>", unsafe_allow_html=True)
 
 # ---------- Navegação (uma seção por vez, sem menu lateral)
@@ -251,8 +259,12 @@ if vista.startswith("Exceções"):
             estado = ""
             if efe:
                 efeito = "volta ao lote" if dh.volta_ao_lote(c.acao, efe) else "fica fora do lote"
-                verbo = "Liberado" if efe["decisao"] == "liberar" else "Ação aprovada"
+                verbo = {"liberar": "Liberado", "manter": "Mantido fora do lote"}.get(efe["decisao"], "Ação aprovada")
                 estado = f'<div class="resolvido">✓ {verbo} por {e(efe["quem"])} ({e(efe["quando"])}) · {efeito}</div>'
+            reg = decisoes.get(c.caso_id, {})
+            if reg.get("nota") or reg.get("responsavel"):
+                estado += (f'<div style="margin-top:6px;font-size:.82rem"><b>Nota:</b> {e(reg.get("nota", "—"))}'
+                           f' · <b>Responsável:</b> {e(reg.get("responsavel") or "—")}</div>')
             evid_html = f'<div class="evid"><b>Evidência na caixa de e-mail:</b> {e(evid.strip())}</div>' if evid else ""
             st.markdown(f"""<div class="caso"><div><span class="selo {classe}">{selo}</span>
               <div class="forn">{e(c.fornecedor)}</div><div class="tit">{c.qtd} título(s): {e(lista)}</div>
@@ -260,19 +272,58 @@ if vista.startswith("Exceções"):
               <div class="din"><div class="v">{brl(c.valor)}</div><div class="q">{c.qtd} título(s)</div></div>
               <div class="acao"><b>Ação proposta:</b> {ACAO_TEXTO.get(c.acao, c.acao)} · <b>Quem decide:</b> {e(quem)}
               {estado}</div></div>""", unsafe_allow_html=True)
-            b1, b2, _ = st.columns([1.25, 1.1, 3])
+            b1, b2, b3, b4 = st.columns([1.3, 1.1, 1.1, 1.6])
             if not efe:
                 if b1.button(ACAO_BOTAO.get(c.acao, "Aprovar ação"), key=f"a-{c.caso_id}", type="primary",
                              use_container_width=True):
-                    dh.registrar(c.caso_id, "aprovar", quem.split(" (")[0])
+                    dh.registrar(c.caso_id, "aprovar", USUARIO)
                     st.rerun()
                 if b2.button("Liberar mesmo assim", key=f"l-{c.caso_id}", use_container_width=True,
                              help="Falso alarme: o título volta ao lote como está"):
-                    dh.registrar(c.caso_id, "liberar", quem.split(" (")[0])
+                    dh.registrar(c.caso_id, "liberar", USUARIO)
                     st.rerun()
-            elif c.caso_id in decisoes and b1.button("Desfazer decisão", key=f"d-{c.caso_id}", use_container_width=True):
-                dh.desfazer(c.caso_id)
+                if b3.button("Manter fora do lote", key=f"m-{c.caso_id}", use_container_width=True,
+                             help="Continua suspeito: fica fora deste envio e sai da pendência"):
+                    dh.registrar(c.caso_id, "manter", USUARIO)
+                    st.rerun()
+            elif efe.get("auto"):
+                if b1.button("Desfazer ação do agente", key=f"r-{c.caso_id}", use_container_width=True,
+                             help="Devolve o caso para uma pessoa decidir"):
+                    dh.registrar(c.caso_id, "revisar", USUARIO)
+                    st.rerun()
+            elif b1.button("Desfazer decisão", key=f"d-{c.caso_id}", use_container_width=True):
+                if c.acionar:
+                    dh.desfazer(c.caso_id)
+                else:  # caso que o agente resolveria sozinho: volta para revisão humana
+                    dh.registrar(c.caso_id, "revisar", USUARIO)
                 st.rerun()
+            with b4.popover("Nota e responsável", use_container_width=True):
+                nota = st.text_area("Nota", value=reg.get("nota", ""), key=f"n-{c.caso_id}",
+                                    placeholder="ex.: liguei para o fornecedor no telefone do cadastro")
+                opcoes_resp = ["", *PESSOAS.values()]
+                atual = reg.get("responsavel", "")
+                resp = st.selectbox("Responsável", opcoes_resp, key=f"p-{c.caso_id}",
+                                    index=opcoes_resp.index(atual) if atual in opcoes_resp else 0)
+                if st.button("Salvar", key=f"s-{c.caso_id}", type="primary"):
+                    dh.anotar(c.caso_id, nota, resp, USUARIO)
+                    st.rerun()
+        if manuais:
+            man_vis = vis[vis.titulo_id.isin(manuais.keys())]
+            if len(man_vis):
+                st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:18px 0 0">Retiradas manuais</h3>'
+                            '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 4px">Títulos que uma pessoa '
+                            'tirou do lote por suspeita própria.</div>', unsafe_allow_html=True)
+            for t in man_vis.itertuples():
+                m = manuais[t.titulo_id]
+                st.markdown(f"""<div class="caso"><div><span class="selo fraude">✋ Retirado manualmente</span>
+                  <div class="forn">{e(t.razao_social)}</div><div class="tit">{e(t.titulo_id)} · vence
+                  {pd.to_datetime(t.vencimento).strftime('%d/%m')}</div><div class="mot">{e(m['motivo'])}</div></div>
+                  <div class="din"><div class="v">{brl(t.valor)}</div></div>
+                  <div class="acao">Retirado por {e(m['quem'])} em {e(m['quando'])}</div></div>""",
+                            unsafe_allow_html=True)
+                if st.button("Devolver ao lote", key=f"dv-{t.titulo_id}"):
+                    dh.devolver_manual(t.titulo_id)
+                    st.rerun()
     if len(al_vis):
         st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -325,6 +376,24 @@ elif vista == "Lote final":
         csv = pd.DataFrame([{k: v for k, v in l.items() if not k.endswith("_html") and k != "_v"} for l in linhas])
         st.download_button("Baixar planilha do lote (CSV)", csv.to_csv(index=False).encode("utf-8-sig"),
                            file_name=f"lote_final_{escolha}.csv", mime="text/csv")
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Retirar títulos do lote</h3>'
+                    '<div style="color:#5b6272;font-size:.82rem;margin:2px 0 8px">Achou algo suspeito que o agente '
+                    'não pegou? Tire do envio com um motivo. Fica registrado e pode ser devolvido na aba Exceções.</div>',
+                    unsafe_allow_html=True)
+        r1, r2, r3 = st.columns([2.2, 2, 1], vertical_alignment="bottom")
+        rotulo_tit = {t.titulo_id: f"{t.titulo_id} · {t.razao_social} · {brl(t.valor)}" for t in seguem.itertuples()}
+        escolhidos = r1.multiselect("Títulos", list(rotulo_tit), format_func=rotulo_tit.get,
+                                    placeholder="Escolha um ou mais títulos")
+        motivo_m = r2.text_input("Motivo", placeholder="ex.: fornecedor ligou dizendo que não emitiu esta nota")
+        if r3.button("Retirar do lote", type="primary", use_container_width=True,
+                     disabled=not (escolhidos and motivo_m.strip())):
+            for tid in escolhidos:
+                dh.retirar_manual(tid, motivo_m.strip(), USUARIO)
+            st.rerun()
+        if not (escolhidos and motivo_m.strip()):
+            st.caption("Escolha ao menos um título e escreva o motivo para liberar o botão.")
     st.caption("Dados fictícios do evento: correções aprovadas ainda precisariam ser lançadas no ERP.")
 
 # ================= CAIXA DE E-MAIL
