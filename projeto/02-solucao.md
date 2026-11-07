@@ -29,6 +29,9 @@ Para o painel não virar um "painel bonito", **o agente age sozinho antes do fec
 | Juntar as fontes e normalizar CNPJ (raiz de 8 dígitos), NF (sem zeros e série) e fornecedor entre sistemas | Código | É regra checável e precisa ser igual sempre |
 | Duplicidade: mesma NF normalizada, mesmo fornecedor, **mesma parcela** | Código | Regra exata; valor igual sozinho dá falso positivo (parcelas) |
 | 3 vias: NF × OC (2% ou R$ 50), título × duplicata (R$ 0,10), raiz do CNPJ, banco do boleto | Código | Tolerâncias escritas em `parametros.md` |
+| **Título × duplicata** ("zero a mais/a menos"): acha a NF no portal pela raiz do CNPJ do fornecedor + NF normalizada e a duplicata pelo n.º da parcela | Código | *Camada 1 (11:10):* pega +R$ 132 mil na fila |
+| **Raiz do CNPJ da NF × fornecedor do título**: NF que não existe para a raiz do fornecedor, mas existe para outro fornecedor → "fornecedor errado" | Código | *Camada 1 (11:10):* Cartonart × Gráfica Cartonar, Polyfilm × Polifilm |
+| **CNPJ do beneficiário do boleto** (raiz) × fornecedor | Código | *Camada 1 (11:10):* 2ª via falsa da Pigmentos Aquarela; banco igual ao do cadastro, só o CNPJ pega |
 | Alçada (soma por fornecedor + NF no dia) e aprovação dupla | Código | Regra de política; fracionar é proibido |
 | Troca bancária: vale só com confirmação pelo telefone **anterior** à troca | Código | Só o registro em `alteracoes_cadastro` vale, nunca o texto de um e-mail |
 | Domínio parecido com o do cadastro (`embalartte` × `embalarte`) | Código | Distância entre textos, sem julgamento |
@@ -36,6 +39,17 @@ Para o painel não virar um "painel bonito", **o agente age sozinho antes do fec
 | Marcar se o texto tenta dar ordem ao agente ("libere sem conferir", "já foi validado") | IA | Exige linguagem; a marcação só **aumenta** a suspeita, nunca libera |
 | Escrever o motivo da exceção em 2 linhas para a pessoa | IA | Linguagem; os fatos vêm do código |
 | Liberar um título que ficou em dúvida | Humano | Palavra final: Renata (fraude e duplicidade), aprovador (até R$ 50 mil), Helena (acima) |
+
+**Ação certa por caso** *(revisão das 11:10; ferramentas de `ferramentas.csv`)*:
+| Caso | Ação do agente | Quem é acionado | Por quê |
+|---|---|---|---|
+| Duplicidade | `cancelar_titulo` no gêmeo (até R$ 5 mil sozinho; acima, `solicitar_aprovacao`) | PS01 só acima da alçada | `retirar_do_lote` devolve para `aberto`, e o título pode voltar a outro lote |
+| Troca bancária sem confirmação (Embalarte) | retira os títulos do lote **e** pede `reverter_alteracao_cadastro` (aprovação dupla) | **1** acionamento de PS01 por fornecedor (PS03 se > R$ 50 mil; PS08 jurídico para o golpe) | Retirar os 25 custa ~R$ 24,3 mil de atraso; com a conta revertida, a dívida legítima sai no prazo |
+| Valor ≠ duplicata | `corrigir_lancamento` para o valor da duplicata (até R$ 5 mil de diferença; acima, aprovador) | aprovador acima da alçada | Paga certo e no prazo, em vez de atrasar |
+| Fornecedor errado | retira do lote e corrige o fornecedor (`corrigir_lancamento` exige aprovador) | aprovador | Senão o dinheiro vai para outra empresa |
+| Boleto com CNPJ de beneficiário diferente | retira do lote; `contatar_fornecedor` pelo canal do cadastro | PS01 (fraude) | Política: 2ª via com beneficiário diferente só com confirmação |
+
+Acionamentos são **agrupados por caso** (fornecedor + regra), porque cada acionamento desnecessário custa R$ 60 no placar.
 
 **Por que workflow e não agente autônomo:** a decisão de pagar é regra e precisa ser auditável e repetível. O agente tem autonomia para **segurar** e **acionar**, que são ações seguras. **Liberar** só acontece por regra limpa ou por uma pessoa. A IA nunca libera nada sozinha.
 
@@ -84,6 +98,13 @@ Saída do guardião, por título (é o que o `eval/run.py` confere):
 - **Antes:** 0 de 876 títulos conferidos `[HIPÓTESE: conferir à mão levaria ~5 min por título, ~73 h por semana]`.
 - **Depois:** 100% conferidos antes do fechamento; a pessoa só olha as exceções, com alvo de ≤ 10% `[HIPÓTESE]`.
 - **Volume:** 876 títulos em 9 dias úteis, ~R$ 10,2 milhões.
+
+## Fase seguinte: cadastro pré-preenchido (decisão das 10:51)
+- O agente lê a NF-e do portal + duplicata + OC e monta o título **pré-preenchido**. O analista só confere e confirma, **sem digitar**. Isso ataca a causa dos erros que o guardião pega (NF em 3 formatos, zero a mais, fornecedor errado).
+- **Fonte:** só NF-e do portal. Boleto por e-mail **não** gera título.
+- Todo título criado passa pelo guardião. Lançamento 100% automático fica para depois.
+- Camada opcional: só se as camadas 1 a 3 estiverem prontas até ~14h; senão, tela mockada no pitch. Não existe ferramenta de criar título em `ferramentas.csv`, então é um rascunho `[HIPÓTESE]`.
+- **Frase para o pitch:** "Hoje o guardião pega o erro do cadastro; amanhã, o cadastro deixa de ser digitado."
 
 ## Replicabilidade
 - Trocar de empresa, marca ou banco = trocar `config/regras.yaml` (tolerâncias, alçadas, horários de fechamento, pessoas a acionar) e `config/fontes.yaml` (caminho e formato de cada base).
