@@ -26,7 +26,7 @@ st.markdown("""
   --borda:#e3e7ee; --fundo:#f4f6f9; --branco:#ffffff; }
 html, body, .stApp, .stApp *:not([data-testid="stIconMaterial"]):not(.material-symbols-rounded){
   font-family:'Poppins', sans-serif !important; }
-.stApp{ background:var(--fundo); color:var(--texto); }
+.stApp{ background:var(--fundo); color:var(--texto); overflow-x:hidden; }
 #MainMenu, footer, header[data-testid="stHeader"], [data-testid="stSidebarCollapsedControl"]{ display:none; }
 .barra{ background:var(--branco); border-bottom:1px solid var(--borda); margin:0 -2rem 0; padding:14px 2rem;
   display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
@@ -93,7 +93,7 @@ div[data-testid="stButtonGroup"] button{ font-weight:600; }
 .stButton button:focus-visible{ outline:3px solid var(--azul-claro); outline-offset:2px; }
 .stDownloadButton button{ border-radius:999px; font-weight:600; background:#fff; color:var(--azul); border:1px solid var(--azul); }
 div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font-size:.78rem; color:var(--texto-2); }
-.block-container{ padding:2.6rem 2.4rem 4rem !important; max-width:1280px; }
+.block-container{ padding:0 2.4rem 4rem !important; max-width:1280px; }
 .marca{ text-align:right; line-height:1.15; }
 .marca .prod{ font-weight:800; font-size:clamp(1.05rem, 1.9vw, 1.55rem); white-space:nowrap; color:var(--texto); letter-spacing:-.01em; }
 .marca img{ height:20px; margin-top:4px; }
@@ -129,7 +129,12 @@ div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font
 [data-testid="stSelectbox"] [role="group"]{ border:1px solid #d5dbe4 !important; }
 [data-testid="stTextInputRootElement"]:focus-within, [data-testid="stMultiSelect"] [role="group"]:focus-within{ border-color:var(--azul) !important; }
 .st-key-lote [role="group"]{ background:transparent !important; border:none !important; }
-[class*="st-key-painel"]{ background:var(--branco) !important; border-radius:18px; }
+[class*="st-key-painel"]{ background:var(--branco) !important; border-radius:20px; padding:26px 30px !important; }
+.faixa{ background:var(--azul); margin:-1rem calc(50% - 50vw) 34px; padding:18px calc(50vw - 50% + 2.4rem); display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.faixa .ctx{ color:#dfe8f6; font-size:.85rem; font-weight:500; letter-spacing:.02em; }
+.faixa .marca-f{ text-align:right; line-height:1.05; }
+.faixa .marca-f .prod{ color:#fff; font-weight:800; font-size:clamp(1.15rem,2vw,1.6rem); white-space:nowrap; letter-spacing:-.01em; }
+.faixa .marca-f img{ height:22px; margin-top:4px; display:inline-block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -221,17 +226,18 @@ def nome_lote(l: str) -> str:
     return f"{r.banco_pagador} · {dia}, {d.strftime('%d/%m')} · fecha às {r.horario_fechamento}"
 
 
-# ---------- Cabeçalho: o lote é o título (e o seletor); a marca fica à direita
-logo_b64 = __import__("base64").b64encode((RAIZ / "assets/logo-gogroup.png").read_bytes()).decode()
+# ---------- Faixa azul (marca) + cabeçalho: o lote é o título (e o seletor)
+limao_b64 = __import__("base64").b64encode((RAIZ / "assets/logo-gogroup-limao.png").read_bytes()).decode()
 cor_ia, txt_ia = ("#1d9e75", "IA ativa · Jev") if TOKEN else ("#f8ae13", "IA em modo simulado")
-c1, c2 = st.columns([4, 1.1], vertical_alignment="top")
+st.markdown(f"""<div class="faixa"><div class="ctx">Contas a pagar · conferência dos lotes de remessa</div>
+  <div class="marca-f"><div class="prod">GoGuardian</div>
+  <img src="data:image/png;base64,{limao_b64}" alt="Gogroup"></div></div>""", unsafe_allow_html=True)
+c1, c2 = st.columns([4, 1.1], vertical_alignment="bottom")
 with c1:
     escolha = st.selectbox("Lote de remessa", ["fila"] + lotes, index=1, format_func=nome_lote, key="lote")
 with c2:
-    st.markdown(f"""<div class="marca"><div class="prod">GoGuardian</div>
-      <img src="data:image/png;base64,{logo_b64}" alt="Gogroup">
-      <div class="ia"><span class="chip"><span class="ponto" style="background:{cor_ia}"></span>{txt_ia}</span></div></div>""",
-                unsafe_allow_html=True)
+    st.markdown(f"""<div style="text-align:right;padding-bottom:8px"><span class="chip">
+      <span class="ponto" style="background:{cor_ia}"></span>{txt_ia}</span></div>""", unsafe_allow_html=True)
 vis = df if escolha == "fila" else df[df.lote_remessa == escolha]
 cs = casos(vis)
 
