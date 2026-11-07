@@ -1,0 +1,21 @@
+{
+  "_comentario": "Quem recebe os avisos do GoGuardian. Trocar de empresa/marca = trocar este arquivo. IDs do Slack ficam no .env (SLACK_ID_<pessoa>), nunca aqui.",
+  "envio_automatico": true,
+  "painel_url": "http://localhost:8501",
+  "pessoas": {
+    "PS01": {"nome": "Renata Paiva", "cargo": "coord. contas a pagar", "cor": "#2659a5"},
+    "PS03": {"nome": "Helena Duarte", "cargo": "diretora financeira", "cor": "#e61782"},
+    "PS08": {"nome": "Lívia Campos", "cargo": "jurídico", "cor": "#f8ae13"},
+    "aprovador": {"nome": "Aprovador", "cargo": "Cláudia ou Renata", "cor": "#3dbfef"}
+  },
+  "acao_texto": {
+    "reverter_alteracao_cadastro": "voltar para a conta anterior e pagar no prazo (aprovação dupla)",
+    "cancelar_titulo": "cancelar o título duplicado",
+    "corrigir_lancamento": "corrigir o lançamento e pagar o valor certo",
+    "contatar_fornecedor": "confirmar o boleto com o fornecedor pelo canal do cadastro",
+    "solicitar_aprovacao": "pedir aprovação do valor somado",
+    "retirar_do_lote": "tirar do lote até alguém conferir",
+    "abrir_incidente": "abrir incidente: ninguém responde nem abre anexos",
+    "registrar_tentativa": "registrar a tentativa; nada foi liberado por causa dela"
+  }
+}

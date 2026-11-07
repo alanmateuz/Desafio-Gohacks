@@ -12,6 +12,7 @@ import decisoes_humanas as dh  # noqa: E402
 from coletor import montar_planilha_mae  # noqa: E402
 from guardiao import alertas_caixa, casos, conferir  # noqa: E402
 from leitor_email import TOKEN  # noqa: E402
+import notificador as nt  # noqa: E402
 
 st.set_page_config(page_title="Guardião do lote · Gogroup", page_icon=str(RAIZ / "assets/g-gogroup.png"),
                    layout="wide", initial_sidebar_state="collapsed")
@@ -135,6 +136,25 @@ div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label{ font
 .faixa .marca-f{ text-align:right; line-height:1.05; }
 .faixa .marca-f .prod{ color:#fff; font-weight:800; font-size:clamp(1.15rem,2vw,1.6rem); white-space:nowrap; letter-spacing:-.01em; }
 .faixa .marca-f img{ height:22px; margin-top:4px; display:inline-block; }
+.st-key-conversa [role="radiogroup"]{ gap:6px; }
+.st-key-conversa label{ background:var(--fundo); border-radius:14px; padding:10px 12px !important; margin:0 !important; width:100%; }
+.st-key-conversa label:has(input:checked){ background:var(--azul-bg); box-shadow:inset 3px 0 0 var(--azul); }
+.st-key-conversa label p{ font-size:.85rem !important; }
+.chat-topo{ display:flex; align-items:center; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--borda); margin-bottom:12px; }
+.av{ flex:0 0 40px; width:40px; height:40px; border-radius:50%; color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:.9rem; }
+.chat-topo .n{ font-weight:600; } .chat-topo .c{ color:var(--texto-2); font-size:.8rem; }
+.chat{ height:520px; overflow-y:auto; padding:4px 6px 4px 0; display:flex; flex-direction:column; gap:14px; }
+.msg{ display:flex; gap:10px; align-items:flex-start; }
+.msg .bot{ flex:0 0 34px; width:34px; height:34px; border-radius:10px; background:var(--azul); color:var(--limao); font-weight:800; display:flex; align-items:center; justify-content:center; font-size:.85rem; }
+.msg .corpo{ min-width:0; flex:1; }
+.msg .meta{ font-size:.75rem; color:var(--texto-2); margin-bottom:4px; } .msg .meta b{ color:var(--texto); font-size:.85rem; }
+.bolha{ background:var(--fundo); border-radius:4px 16px 16px 16px; padding:12px 14px; font-size:.86rem; }
+.bolha .it{ background:var(--branco); border:1px solid var(--borda); border-radius:12px; padding:10px 12px; margin-top:8px; }
+.bolha .it .l1{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-weight:600; }
+.bolha .it .v{ color:var(--rosa); font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.bolha .it .mo{ margin-top:4px; } .bolha .it .ac{ color:var(--texto-2); font-size:.8rem; margin-top:4px; }
+.bolha .lk{ margin-top:8px; font-size:.8rem; color:var(--azul); font-weight:600; }
+.bolha.prev{ background:transparent; border:1.5px dashed #c6cdd8; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -179,12 +199,7 @@ PESSOAS = {"PS01": "Renata Paiva (coord. contas a pagar)", "PS03": "Helena Duart
 ACAO_BOTAO = {"reverter_alteracao_cadastro": "Aprovar reversão da conta", "cancelar_titulo": "Aprovar cancelamento",
               "corrigir_lancamento": "Aprovar correção", "contatar_fornecedor": "Confirmar e bloquear boleto",
               "solicitar_aprovacao": "Aprovar valor somado", "retirar_do_lote": "Manter fora do lote"}
-ACAO_TEXTO = {"reverter_alteracao_cadastro": "voltar para a conta anterior e pagar no prazo (aprovação dupla)",
-              "cancelar_titulo": "cancelar o título duplicado",
-              "corrigir_lancamento": "corrigir o lançamento e pagar o valor certo",
-              "contatar_fornecedor": "confirmar o boleto com o fornecedor pelo canal do cadastro",
-              "solicitar_aprovacao": "pedir aprovação do valor somado",
-              "retirar_do_lote": "tirar do lote até alguém conferir"}
+ACAO_TEXTO = nt.ACAO_TEXTO  # config/equipe.json
 SELO = {"troca_bancaria_sem_confirmacao": ("fraude", "⚠ Fraude · conta trocada"),
         "boleto_beneficiario_diferente": ("fraude", "⚠ Fraude · boleto falso"),
         "duplicidade": ("dup", "⧉ Pagamento em dobro"),
@@ -283,7 +298,12 @@ st.markdown('<div class="kpis">'
             + "</div>", unsafe_allow_html=True)
 
 # ---------- Navegação (uma seção por vez, sem menu lateral)
-VISTAS = [f"Exceções ({n_pend})", "Caixa de e-mail", "Planilha mãe", "Lote final"]
+# ---------- Avisos para a equipe (fila inteira): o agente avisa sozinho, sem repetir
+itens_aviso = nt.montar_itens(casos(df), alertas, decisoes)
+if nt.CONFIG.get("envio_automatico") and nt.novos(itens_aviso):
+    nt.enviar(itens_aviso)
+hist = nt.historico()
+VISTAS = [f"Exceções ({n_pend})", f"Equipe ({len(hist)})", "Caixa de e-mail", "Planilha mãe", "Lote final"]
 vista = st.segmented_control("Seção", VISTAS, default=VISTAS[0], label_visibility="collapsed", key="secao") or VISTAS[0]
 st.markdown('<div class="secao-espaco"></div>', unsafe_allow_html=True)
 
@@ -440,6 +460,58 @@ if vista.startswith("Exceções"):
                 if not ok and st.button("Marcar como ciente", key=f"c-{chave}"):
                     dh.registrar(chave, "ciente", PESSOAS.get(a.acionar, a.acionar).split(" (")[0])
                     st.rerun()
+
+# ================= EQUIPE (chat com os avisos enviados a cada pessoa)
+elif vista.startswith("Equipe"):
+    modo = nt.modo()
+    pend_aviso = nt.novos(itens_aviso)
+    rot_modo = {"slack": "Slack · mensagem direta", "webhook": "Slack · canal", "simulado": "Simulado (sem Slack)"}[modo]
+    with st.container(border=True, key="painel9"):
+        t1, t2 = st.columns([3, 1.3], vertical_alignment="center")
+        with t1:
+            st.markdown(f'<h3 style="font-size:1.02rem;font-weight:600;margin:0">Avisos para a equipe</h3>'
+                        f'<div style="color:#5b6272;font-size:.82rem;margin-top:2px">O agente manda uma mensagem por pessoa, '
+                        f'só com os casos que esperam a decisão dela, e não repete o que já avisou. '
+                        f'<span class="chip" style="margin-left:4px">{e(rot_modo)}</span></div>', unsafe_allow_html=True)
+        with t2:
+            if st.button(f"Avisar a equipe ({len(pend_aviso)} novo(s))", disabled=not pend_aviso,
+                         width="stretch", key="avisar"):
+                nt.enviar(itens_aviso)
+                st.rerun()
+        quem = list(nt.PESSOAS)
+        cont = {p: sum(len(m["itens"]) for m in hist if m["pessoa"] == p) for p in quem}
+        cl, cr = st.columns([1, 2.6])
+        with cl:
+            sel = st.radio("Conversa", quem, key="conversa", label_visibility="collapsed",
+                           format_func=lambda p: f"{nt.PESSOAS[p]['nome']} · {cont[p]} aviso(s)")
+        with cr:
+            p = nt.PESSOAS[sel]
+            ini = "".join(w[0] for w in p["nome"].split()[:2]).upper()
+            blocos = []
+            for m in [m for m in hist if m["pessoa"] == sel]:
+                cls, rot = {"enviado": ("ok", "✓ entregue no Slack"), "simulado": ("neutro", "simulado"),
+                            "falhou": ("fraude", "falhou · reenvia no próximo aviso"),
+                            "sem_id": ("erro", "sem ID do Slack no .env")}.get(m["status"], ("neutro", m["status"]))
+                its = ""
+                for i in m["itens"]:
+                    v = f'<span class="v">{brl(i["valor"])}</span>' if i["valor"] else ""
+                    its += (f'<div class="it"><div class="l1"><span>{e(i["fornecedor"])}</span>{v}</div>'
+                            f'<div class="mo">{e(i["motivo"])}</div>'
+                            f'<div class="ac"><b>Ação proposta:</b> {e(i["acao"])}</div></div>')
+                blocos.append(f'<div class="msg"><div class="bot">G</div><div class="corpo"><div class="meta"><b>GoGuardian</b> · '
+                              f'{e(m["quando"])} · <span class="selo {cls}">{e(rot)}</span></div><div class="bolha">'
+                              f'Olá, {e(p["nome"].split()[0])}! Separei {len(m["itens"])} caso(s) que precisam da sua decisão.'
+                              f'{its}<div class="lk">↗ Decidir no painel</div></div></div></div>')
+            prev = [i for i in pend_aviso if i["pessoa"] == sel]
+            if prev:
+                blocos.append(f'<div class="msg"><div class="bot">G</div><div class="corpo"><div class="meta"><b>GoGuardian</b> · '
+                              f'ainda não enviado</div><div class="bolha prev">{len(prev)} caso(s) novo(s) esperando o próximo aviso: '
+                              f'{e(", ".join(i["fornecedor"] for i in prev))}</div></div></div>')
+            if not blocos:
+                blocos.append('<div class="vazio">Nenhum aviso para esta pessoa: nada espera a decisão dela.</div>')
+            st.markdown(f'<div class="chat-topo"><div class="av" style="background:{p["cor"]}">{e(ini)}</div>'
+                        f'<div><div class="n">{e(p["nome"])}</div><div class="c">{e(p["cargo"])}</div></div></div>'
+                        f'<div class="chat">{"".join(blocos)}</div>', unsafe_allow_html=True)
 
 # ================= LOTE FINAL
 elif vista == "Lote final":

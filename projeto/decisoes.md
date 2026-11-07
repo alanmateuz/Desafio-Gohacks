@@ -169,3 +169,11 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   5. **Botões com altura mínima de 44 px**, a área mínima de toque.
 - **Descartado (não se aplica ou tem pouco ganho aqui):** campo de cartão, checkout como convidado, meios de pagamento, troca de listas suspensas por botões de opção.
 - **IA errou?** No teste, o primeiro item da lista de títulos é "selecionar todos", e o Enter marcou os 185 títulos. Nada saiu, porque o motivo é obrigatório e o resumo mostrou "o envio cai para R$ 0,00". O caso ficou como argumento de por que o total antes de confirmar importa.
+
+### [15:04] Avisos para a equipe (Slack) e chat no painel
+- **Decisão:** `src/notificador.py` manda 1 mensagem por pessoa (Renata, Helena, Lívia, aprovador) só com os casos que esperam a decisão dela; o que o agente resolve na alçada do analista não vai. Não repete: só caso novo ou com valor mudado. Envio automático quando o painel carrega (`config/equipe.json`, `envio_automatico`) e botão "Avisar a equipe". Nova aba **Equipe** mostra o histórico como chat, uma conversa por pessoa.
+- **Por quê:** o pedido do Mateus foi "ninguém precisa ficar lendo a tela direto". O aviso chega na pessoa certa, com motivo e ação, e o painel vira o lugar de decidir.
+- **Como:** 3 modos pelo `.env`: Slack DM (`SLACK_BOT_TOKEN` + `SLACK_ID_<pessoa>`), webhook (`SLACK_WEBHOOK_URL`) ou simulado (grava em `dados/outbox_slack.jsonl`). Texto montado em código, a IA não escreve na mensagem. 2 tentativas por envio; se falhar, fica "falhou" e volta no próximo aviso. Pessoas e textos de ação no config, não no código.
+- **Descartei:** botões "Aprovar" dentro do Slack (exige servidor público para receber o clique), que ficou como próximo passo do slide 8. Também descartei o patch que outro Claude montou numa cópia remota do repositório, porque não chegou aqui (sem push). Refiz localmente, com o chat que ele não tinha.
+- **IA errou?** O alerta de phishing saiu com fornecedor "—" no chat. Vi no navegador e troquei para "Caixa de e-mail · remetentes desconhecidos". Os motivos vêm das regras com valor no formato americano (R$ 90,873.80), o que é anterior a esta mudança e fica anotado para corrigir.
+- **Resultado:** 15 avisos em 4 mensagens (bate com os 15 acionamentos), 4 testes novos, 32/32 passando.
