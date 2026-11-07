@@ -1,6 +1,6 @@
 # Contexto do projeto (handoff para outro Claude)
 
-Atualizado em 07/11/2026, ~10h15. Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo.
+Atualizado em 07/11/2026, ~11h20. Leia junto com o `CLAUDE.md`, que tem as regras da casa e prevalece sobre este arquivo. Também leia `projeto/01-problema.md`, `projeto/02-solucao.md` e `projeto/decisoes.md`.
 
 ## Quem e o quê
 - **Mateus** (git: `alanmateuz`) participa do **GoHacks Talent**, um hackathon individual de 1 dia. A construção vai das 9h40 às 16h30, o código congela às 15h30 e a submissão fecha às 16h30.
@@ -12,8 +12,35 @@ Atualizado em 07/11/2026, ~10h15. Leia junto com o `CLAUDE.md`, que tem as regra
 |---|---|
 | Triagem | ✅ Escolhido o **Desafio 2: Pagamentos**. Plano B: Atendimento ao Cliente. Detalhes em `projeto/01-problema.md`, Parte 1. |
 | Descoberta | ⚠️ As perguntas para o mentor foram escritas (Parte 2), mas **o cenário mudou** (ver abaixo). A fonte agora são as bases em `dados/`, não o mentor. |
-| Problema/solução | ⏳ **Próximo passo:** mapa de dores com score, depois 1 problema · 1 usuário · 1 hipótese, depois `02-solucao.md`. |
-| Construir, testes, pitch | ⏳ |
+| Problema | ✅ Aprovado (Parte 3 de `01-problema.md`). Tem o mapa de dores com score, a frase, o usuário, a hipótese, o experimento, as métricas, o escopo e 8 critérios de aceite. |
+| Solução | ✅ Aprovada (`02-solucao.md`). Guardião do lote com planilha mãe e painel. |
+| Construir | 🔨 **Camada 1 em andamento, com código parcial e sem commit.** Ver "Estado da construção". |
+| Testes, pitch | ⏳ |
+
+### Problema aprovado
+- **Frase do Mateus:** "O volume de pagamentos é tão grande que o processo vira manual e impossível de revisar, abrindo espaço para golpes e perda de dinheiro."
+- **Usuário-chave:** Marcos Teles, tesoureiro, que assina o lote.
+- **Hipótese:** conferir cada título com as regras antes do fechamento barra a fraude e as duplicidades sem atrasar os pagamentos legítimos.
+- **Menor experimento:** rodar no lote `RM20261103-MER` (192 títulos, 03/11 às 10h) contra um gabarito de ~20 títulos que o Mateus confere à mão.
+
+### Solução aprovada (ideia do Mateus, refinada)
+1. Coletar as plataformas espalhadas (ERP, Compras, NF-e, DDA, bancos, e-mail).
+2. Montar uma **planilha mãe**, com uma linha por título e CNPJ e NF normalizados.
+3. As **regras em código** conferem cada título:
+   - troca bancária sem confirmação;
+   - duplicidade (mesma NF normalizada + fornecedor + **parcela**);
+   - 3 vias;
+   - alçada.
+4. O que está limpo vai para a **planilha final do lote**, que o Marcos assina.
+5. Exceções saem do lote e vão para a pessoa certa, pelo Slack e com o motivo:
+   - Renata PS01 para fraude e duplicidade;
+   - aprovador até R$ 50 mil;
+   - Helena PS03 acima disso.
+6. Se a pessoa aprovar, o título volta ao lote.
+
+A **IA (Claude)** só lê e-mails e boletos (JSON validado), marca tentativas de dar ordem ao agente e escreve o motivo. **Ela nunca libera nada.**
+
+O **painel** é obrigatório, porque o Mateus quer tudo nele. Tem três telas: planilha mãe, exceções (com Aprovar e Recusar) e lote final. Outras telas serão pensadas depois. O agente age sozinho antes do fechamento; o painel é para ver e decidir.
 
 **Mudança de rota (registrada no `decisoes.md`):** os desafios passaram a ser fictícios. É preciso usar as bases enviadas pela organização, e o que faltar pode ser inventado, sempre marcado como `[HIPÓTESE]`.
 
@@ -102,16 +129,34 @@ Atenção ao formato:
 5. **Indício a confirmar:** o usuario_02 (Vinícius Barros) foi desligado em 30/09, mas aparecem cerca de 500 títulos lançados por ele depois dessa data.
 6. **Trocas bancárias legítimas, para comparar com o golpe:** Cartonart, Polyfilm, Evoluir e Magnetec. Todas foram confirmadas por telefone do cadastro.
 
-### Ideia em discussão (o Mateus ainda não decidiu)
-Um agente que confere cada título da fila **antes do fechamento do lote**:
-- o código aplica as regras (3 vias, alçada, troca bancária, duplicidade);
-- a IA lê e-mails e boletos e explica o motivo;
-- o humano só vê as exceções, com o motivo, pelo canal do time.
+### Armadilhas já identificadas
+- **Parcelas legítimas parecem duplicidade:** TP431502 e TP431503 (mesmo valor, vencimentos 03/11 e 10/11), TP431762 e TP431763 (R$ 2.003,67 e R$ 2.003,66, porque a 1ª parcela leva o centavo). Por isso a duplicidade compara a parcela também.
+- **Série depois de `-` ou `/`:** `11079-1` e `36495/1` são série, não parcela. A parcela está no campo `parcela` (`n/total`).
+- **TP429834 × TP430006** (Maciez, NF 20329, parcela 2/2): um é TED e o outro é boleto, lançados por pessoas diferentes. É duplicidade real.
+
+## Estado da construção (camada 1)
+**Plano aprovado:** fluxo ponta a ponta feio com só 2 regras (troca bancária sem confirmação + duplicidade) e o motivo em **modo simulado** (sem chamar a IA). O painel tem 3 abas. As 3 vias, a alçada e a IA real ficam para a camada 2. Aprovar e Recusar e o Slack ficam para a camada 3. A config fica para a camada 4.
+
+**Já escrito (sem commit):**
+- `src/regras.py`: `normalizar_nf`, `troca_bancaria_sem_confirmacao` (janela de 30 dias até 02/11 08:00; só `confirmacao_registrada=sim` vale; só para ted/pix), `chave_duplicidade`, `avaliar(titulo)` e `validar_saida` (decisões `liberar | retirar | acionar`).
+- `src/coletor.py`: `montar_planilha_mae()` junta agenda + contas_a_pagar + fornecedores + alterações e calcula `nf_normalizada`, `troca_bancaria_suspeita` e `duplicado_de`. O original é o título já pago ou o primeiro lançado; só os agendados extras são marcados.
+- `src/solucao.py`: `resolver(titulo)` devolve `{decisao, regras_violadas, acionar, motivo}`. Dado faltando vira `acionar`.
+- `src/ia.py`: `escrever_motivo` simulado.
+
+**Falta na camada 1:**
+1. `src/guardiao.py`: roda `resolver` em toda a planilha mãe e imprime o resumo por decisão e por regra, mais as exceções. Aceita filtro por lote.
+2. `app.py`: painel Streamlit com as abas planilha mãe, exceções e lote final.
+3. `requirements.txt` (pandas, streamlit, pytest, anthropic) e `dados/` no `.gitignore`.
+4. Adaptar `tests/test_regras.py` e `eval/casos.json`, que ainda usam as funções de exemplo do kit (`tem_termo_proibido`, que foi removida) e vão quebrar.
+5. Rodar no lote `RM20261103-MER` e conferir: os títulos da Embalarte (TP431502, TP432024) saem; da Maciez, o TP430006 sai e o TP429834 segue.
+6. Commit `feat:` e `git tag v1-demo`.
+
+Depois, o `/testes` (agente avaliador) monta o gabarito com o Mateus.
 
 ## Ambiente
 - **Repositório:** `https://github.com/alanmateuz/Desafio-Gohacks`, branch `main`. O histórico começa em 07/11/2026. O Mateus não quer nenhum commit com data anterior a isso.
 - **Identidade git** configurada só neste repositório: alanmateuz / alanmateusqueiroz@gmail.com.
-- **Commits locais ainda não enviados:** `8d9c02c` (perguntas de descoberta), `4fb935b` (mudança de rota) e o deste arquivo.
-- **Python não está instalado** no notebook; só existe o atalho da Microsoft Store. A análise foi feita com o PowerShell (`Import-Csv`, usando `InvariantCulture` para os decimais). Instale o Python antes de rodar `eval/run.py` ou `pytest`.
-- **Token do proxy de IA:** fica na página do evento, com login pelo e-mail do evento. Guarde no `.env`, nunca no código.
+- **Commits locais ainda não enviados:** `d733298`, `7829c9e` e `5553d75` (mapa de dores, problema, solução) e o desta atualização. O que veio antes já está no GitHub.
+- **Python 3.12.10 instalado** em `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`. Até reabrir o terminal, `python` ainda cai no atalho da Microsoft Store; use o caminho completo. As dependências (pandas, streamlit, pytest, anthropic) foram instaladas com `pip`. O Mateus também vai instalar o Node, mas ele não é usado na stack.
+- **API do Claude liberada no evento.** A chave vai no `.env` (`LLM_API_KEY`, `LLM_MODEL=claude-sonnet-5-5`), nunca no código. Sem chave, use o modo simulado.
 - **`dados/` está fora do git.** Decidir se entra no repositório (cerca de 11 MB, dados fictícios) ou no `.gitignore`.
