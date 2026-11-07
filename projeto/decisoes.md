@@ -89,3 +89,23 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
   1. O dev escreveu `abs(valor − duplicata) > 0,10`. Em ponto flutuante, 1000,10 − 1000,00 = 0,1000000000000227, e uma diferença de exatamente 10 centavos, que a política aceita, seria barrada. Um teste novo pegou o erro; a correção foi arredondar a diferença para centavos.
   2. Os casos 01 e 05 do eval falharam depois da mudança, porque foram escritos sem as colunas da NF. O guardião acertou ao acionar quem não tem NF no portal; a entrada dos casos foi atualizada para o formato novo.
 - **Ainda é gabarito do dev, não do Mateus.** O /testes precisa confirmar.
+
+### [12:50] /testes, rodada 1 da IA: leitura de e-mails com o Jev (AI Proxy)
+- **Decisão:** a IA é o **Jev** do AI Proxy do evento (`/v1/systemone`), e não o Claude, porque o token liberado é do proxy, no formato OpenAI. Ele responde 3 perguntas sobre o texto: pede troca de conta?, tenta dar ordem ao agente? e tipo. Banco, conta e CNPJ citados ficam com o código. A saída é validada contra um schema, com até 2 tentativas; se falhar, vai para uma pessoa. Confiança abaixo de 0,7 → revisão. Prompt em `src/leitor_email.py` (`ler_email_v1`).
+- **Gabarito:** `eval/gabarito_emails.csv`, com 30 e-mails (25 da base e 5 inventados e marcados), **confirmado pelo Mateus**. Ponto 1 (a 2ª via falsa da Pigmentos é `cobranca`: quem pega é o código) e ponto 2 (o falso cartório não instrui o agente) aceitos. O ponto 3 (INV004) é verificado com um par no cadastro: confirmada → segue; sem confirmação → retida.
+- **Resultado (4 repetições sem cache):**
+
+  | Pergunta | Acerto |
+  |---|---|
+  | pede troca de conta | 30/30 nas 4 |
+  | tenta instruir o agente | 30/30 nas 4 (inclui a injeção disfarçada e a em inglês) |
+  | tipo | 29 ou 30/30: só o falso cartório (EM570998) oscila entre `phishing` e `cobranca` |
+  | e-mails 100% certos | 97–100% |
+
+  O EM570998 tem confiança de ~0,4 em todas as rodadas, então **sempre vai para revisão humana**. O erro da IA nunca vira decisão.
+  Custo: US$ 0,0008 por rodada de 30 e-mails.
+- **Descartei:** reescrever a pergunta só para acertar o EM570998. Com 30 casos, seria decorar o teste (overfitting). No lugar, a regra em código "remetente com domínio fora do cadastro" pega esse e-mail sempre, junto com os outros 4 domínios falsos.
+- **IA errou?**
+  1. O Jev oscila no falso cartório → percebi rodando 4 vezes → a confiança baixa já manda para revisão, e o código vai pegar pelo domínio.
+  2. O dev (agente) errou o cache: com `--sem-cache`, o arquivo era regravado só com a última leitura → percebi porque uma leitura que devia vir do cache chamou o Jev de novo → corrigido para sempre carregar o cache antes de gravar.
+  3. A primeira chamada ao Jev deu 403 (o Cloudflare bloqueia o User-Agent padrão do Python) → corrigido com um User-Agent próprio.
