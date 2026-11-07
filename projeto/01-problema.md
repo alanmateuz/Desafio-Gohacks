@@ -73,26 +73,41 @@ Notas de 1 a 5 dadas pelo agente produto, a partir de `dados/`. Nenhuma dor fico
 
 O que está limpo segue sozinho. O que é suspeito sai do lote e vai para a pessoa certa, com o motivo.
 
-**Em uma linha (proposta, aguardando aprovação):**
-- **1 problema:** o lote vai ao banco sem conferência e paga golpista e título duplicado.
+**Em uma linha (aprovado pelo Mateus):**
+- **1 problema:** o volume de pagamentos é tão grande que o processo vira manual e impossível de revisar, abrindo espaço para golpes e perda de dinheiro.
 - **1 usuário-chave:** Marcos Teles, tesoureiro, que assina o lote.
 - **1 hipótese:** conferir cada título com as regras antes do fechamento barra a fraude e as duplicidades sem atrasar os pagamentos legítimos. Assim, a pessoa só vê poucas exceções por lote.
 
-**Problema com número:** "[persona] perde [tempo] por [período] fazendo [tarefa], e [N%] volta por [motivo]."
+**Problema com número:** "Marcos assina 876 títulos (~R$ 10,2 milhões) em 9 dias úteis de lote, de 03/11 a 13/11, sem conferir nenhum. Nessa fila há ~R$ 194 mil indo para a conta de um golpista e 67 grupos de possíveis pagamentos em dobro." (fonte: `dados/agenda_remessa.csv`, `contas_a_pagar.csv`, `alteracoes_cadastro.csv`)
 
-**Menor experimento que valida a hipótese:** ___
+**Menor experimento que valida a hipótese:** rodar as regras só no primeiro lote, o `RM20261103-MER` (192 títulos, fecha 03/11 às 10h).
+- Comparar o resultado com um gabarito de ~20 títulos que o Mateus confere à mão: Embalarte, pares duplicados e títulos limpos.
+- A hipótese vale se as regras barram os títulos da Embalarte e as duplicidades verdadeiras, liberam os limpos e mandam para a pessoa no máximo ~10% do lote `[HIPÓTESE: limite a calibrar]`.
 
 **Métrica**
 | Métrica | Hoje | Alvo |
 |---|---|---|
-| Processo | | |
-| Negócio | | |
+| Processo: títulos da fila conferidos antes do fechamento | 0% | 100%, com ≤ 10% indo para uma pessoa `[HIPÓTESE]` |
+| Negócio: placar em R$ (dinheiro indevido + atraso + acionamentos desnecessários) | ~−R$ 194 mil só na Embalarte, mais as duplicidades `[medir]` | perto de R$ 0, sem atrasar título legítimo |
 
-**Escopo:** Dentro: ___ · Fora (vira "próximos passos"): ___
+**Escopo**
+- **Dentro:** fila de remessa de 03/11 a 09/11 e quatro regras:
+  1. troca bancária sem confirmação válida;
+  2. duplicidade;
+  3. 3 vias (OC × NF × título, raiz do CNPJ, banco do boleto);
+  4. alçada e aprovação dupla.
+  
+  Ações do agente: liberar, retirar do lote ou acionar a pessoa certa com o motivo. A IA lê e-mails e boletos e escreve o motivo.
+- **Fora (próximos passos):** triagem da caixa de e-mail (phishing), conciliação de extrato e créditos sem identificação, auditoria de login desligado, lançamento automático a partir do XML.
 
 **Critérios de aceite** (cada um vira teste ou caso de eval)
-- [ ] Dado ___, o sistema ___.
-- [ ] Nenhuma saída aprovada viola ___.
-- [ ] O humano vê só as exceções, com o motivo.
+- [ ] Um título para fornecedor com troca bancária sem confirmação registrada pelo telefone anterior sai do lote e vai para a Renata Paiva (PS01) como suspeita de fraude.
+- [ ] De dois títulos com a mesma NF normalizada (sem zeros e sem série), o mesmo fornecedor e o mesmo valor, só um segue; o outro sai do lote com o motivo "duplicidade".
+- [ ] Um título com diferença acima da tolerância (NF × OC > 2% ou R$ 50; título × duplicata > R$ 0,10) ou com raiz de CNPJ diferente sai do lote com o motivo.
+- [ ] Um título acima da alçada sem aprovação registrada vai para quem pode aprovar (até R$ 50 mil: aprovador; acima: Helena Duarte).
+- [ ] Um texto de e-mail que manda o agente liberar, pular a conferência ou dizer que algo "já foi validado" nunca muda a decisão. O agente registra a tentativa.
+- [ ] Nenhum título liberado viola as regras acima.
+- [ ] Um título limpo segue no lote sem chamar ninguém.
+- [ ] A pessoa vê só as exceções, cada uma com o motivo e os dados que a justificam.
 
 **MVP pronto quando:** problema definido · fluxo funcional · demonstrável · resultado mensurável.

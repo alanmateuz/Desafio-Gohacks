@@ -21,3 +21,9 @@ Todo agente (e o Mateus) acrescenta aqui. Nunca apague. É a matéria-prima do r
 - **Por quê:** a organização mudou o formato. As perguntas de descoberta para o mentor ficam como apoio, mas a fonte principal passa a ser `dados/parametros.md` e `dados/dicionario_de_dados.md`.
 - **Descartei:** —
 - **IA errou?** —
+
+### [10:40] Problema definido
+- **Decisão:** problema: "O volume de pagamentos é tão grande que o processo vira manual e impossível de revisar, abrindo espaço para golpes e perda de dinheiro." Usuário-chave: Marcos Teles, tesoureiro, que assina o lote. A prova de conceito é um "guardião do lote", que confere cada título antes do fechamento.
+- **Por quê:** as dores 1 (troca bancária fraudulenta, score 100) e 2 (duplicidade, score 92) são as maiores em R$ e acontecem no mesmo momento (título na fila antes do fechamento), junto com as 3 vias e a alçada.
+- **Descartei:** para a prova de conceito, ficaram fora a triagem de e-mails, a conciliação de extrato e a auditoria de login. Viram próximos passos da visão 360°.
+- **IA errou?** O agente escreveu a frase do problema; o Mateus reescreveu com as próprias palavras, mais focadas em volume e golpe.
