@@ -295,7 +295,7 @@ def resumo_fila():
                  .agg(valor=("valor", "sum"), qtd=("qtd", "sum")).sort_values("valor", ascending=False))
     l1, l2 = st.columns(2)
     with l1:
-        with st.container(border=True, key="painel7"):
+        with st.container(border=True, key="painel7", height=560):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Dinheiro protegido por tipo de problema</h3>'
                         '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">Fila inteira, 03/11 a 13/11</div>',
                         unsafe_allow_html=True)
@@ -304,7 +304,7 @@ def resumo_fila():
                                [("tipo_html", "Problema", ""), ("qtd", "Títulos", "num"), ("valor", "Valor", "num forte")],
                                altura=420), unsafe_allow_html=True)
     with l2:
-        with st.container(border=True, key="painel8"):
+        with st.container(border=True, key="painel8", height=560):
             st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Próximos fechamentos</h3>'
                         '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">O que vai ao banco em cada lote</div>',
                         unsafe_allow_html=True)
@@ -475,8 +475,8 @@ elif vista == "Lote final":
                            file_name=f"lote_final_{escolha}.csv", mime="text/csv")
     st.caption("Para tirar um título do envio, use a seção Caixa de e-mail: clique no e-mail suspeito e os títulos ligados a ele já vêm preenchidos.")
     st.caption("Dados fictícios do evento: correções aprovadas ainda precisariam ser lançadas no ERP.")
-    st.markdown('<div style="height:30px"></div><h3 style="font-size:1.15rem;font-weight:600;margin:0 0 4px">'
-                'Resumo da fila</h3><div style="color:#5b6272;font-size:.84rem;margin-bottom:12px">'
+    st.markdown('<div style="height:30px"></div><div style="font-size:1.15rem;font-weight:600;margin:0 0 4px">'
+                'Resumo da fila</div><div style="color:#5b6272;font-size:.84rem;margin-bottom:12px">'
                 'Todos os lotes de 03/11 a 13/11, independentemente do lote escolhido no topo.</div>',
                 unsafe_allow_html=True)
     resumo_fila()
