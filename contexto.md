@@ -224,6 +224,7 @@ python -m streamlit run app.py            # painel em http://localhost:8501
 - Faixa azul com o total a enviar.
 - Tabela HTML sem cortes, já com a conta revertida ou o valor corrigido quando aprovado.
 - Exportação em CSV.
+- No fim, o **Resumo da fila** (`resumo_fila()`): "Dinheiro protegido por tipo de problema" e "Próximos fechamentos", sempre da fila inteira.
 
 **CRUD das suspeitas** (`src/decisoes_humanas.py`, arquivo `dados/decisoes_humanas.json`, no formato `{"casos": {...}, "manuais": {...}}`): criar (retirada manual), ler, atualizar (aprovar, liberar, manter, nota, responsável) e excluir (desfazer, devolver), sempre com registro de quem fez e quando. O arquivo é apagado antes da demo para começar limpo.
 

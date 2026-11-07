@@ -287,6 +287,41 @@ VISTAS = [f"Exceções ({n_pend})", "Caixa de e-mail", "Planilha mãe", "Lote fi
 vista = st.segmented_control("Seção", VISTAS, default=VISTAS[0], label_visibility="collapsed", key="secao") or VISTAS[0]
 st.markdown('<div class="secao-espaco"></div>', unsafe_allow_html=True)
 
+def resumo_fila():
+    """Mini resumo da fila inteira: dinheiro protegido por tipo e próximos fechamentos."""
+    tudo = casos(df)
+    nomes = {k: v[1] for k, v in SELO.items()}
+    por_regra = (tudo.assign(r=tudo.caso_id.str.split(":").str[1]).groupby("r")
+                 .agg(valor=("valor", "sum"), qtd=("qtd", "sum")).sort_values("valor", ascending=False))
+    l1, l2 = st.columns(2)
+    with l1:
+        with st.container(border=True, key="painel7"):
+            st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Dinheiro protegido por tipo de problema</h3>'
+                        '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">Fila inteira, 03/11 a 13/11</div>',
+                        unsafe_allow_html=True)
+            st.markdown(tabela([{"tipo_html": f'<span class="selo {SELO.get(r, ("erro", r))[0]}">{e(nomes.get(r, r))}</span>',
+                                 "qtd": int(row.qtd), "valor": brl(row.valor)} for r, row in por_regra.iterrows()],
+                               [("tipo_html", "Problema", ""), ("qtd", "Títulos", "num"), ("valor", "Valor", "num forte")],
+                               altura=420), unsafe_allow_html=True)
+    with l2:
+        with st.container(border=True, key="painel8"):
+            st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Próximos fechamentos</h3>'
+                        '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">O que vai ao banco em cada lote</div>',
+                        unsafe_allow_html=True)
+            linhas = []
+            for l in lotes:
+                g = df[df.lote_remessa == l]
+                r = g[g.decisao != "liberar"]
+                rl = info.loc[l]
+                curto = (f"{rl.banco_pagador.replace('Banco ', '')} · "
+                         f"{pd.to_datetime(rl.data_prevista).strftime('%d/%m')} · {rl.horario_fechamento}")
+                linhas.append({"lote": curto, "tit": len(g), "ret_html":
+                               f'<span class="selo fraude">{len(r)} retidos</span>' if len(r) else '<span class="selo ok">✓ limpo</span>',
+                               "valor": brl(g.valor.sum())})
+            st.markdown(tabela(linhas, [("lote", "Lote", ""), ("tit", "Títulos", "num"), ("ret_html", "Situação", ""),
+                                        ("valor", "Valor na fila", "num forte")], altura=420), unsafe_allow_html=True)
+
+
 # ================= EXCEÇÕES
 if vista.startswith("Exceções"):
     ordem = cs.assign(p=cs.efetiva.isna()).sort_values(["p", "valor"], ascending=[False, False])
@@ -440,6 +475,11 @@ elif vista == "Lote final":
                            file_name=f"lote_final_{escolha}.csv", mime="text/csv")
     st.caption("Para tirar um título do envio, use a seção Caixa de e-mail: clique no e-mail suspeito e os títulos ligados a ele já vêm preenchidos.")
     st.caption("Dados fictícios do evento: correções aprovadas ainda precisariam ser lançadas no ERP.")
+    st.markdown('<div style="height:30px"></div><h3 style="font-size:1.15rem;font-weight:600;margin:0 0 4px">'
+                'Resumo da fila</h3><div style="color:#5b6272;font-size:.84rem;margin-bottom:12px">'
+                'Todos os lotes de 03/11 a 13/11, independentemente do lote escolhido no topo.</div>',
+                unsafe_allow_html=True)
+    resumo_fila()
 
 # ================= CAIXA DE E-MAIL
 elif vista == "Caixa de e-mail":
@@ -576,37 +616,3 @@ elif vista == "Planilha mãe":
             "Título": st.column_config.TextColumn(width="small"), "Parcela": st.column_config.TextColumn(width="small"),
             "Vence": st.column_config.TextColumn(width="small"), "Forma": st.column_config.TextColumn(width="small")})
         st.caption(f"{len(mae)} de {len(vis)} títulos · ERP, Compras, portal NF-e, DDA e caixa de e-mail cruzados")
-
-# ================= RESUMO DA FILA
-else:
-    tudo = casos(df)
-    nomes = {k: v[1] for k, v in SELO.items()}
-    por_regra = (tudo.assign(r=tudo.caso_id.str.split(":").str[1]).groupby("r")
-                 .agg(valor=("valor", "sum"), qtd=("qtd", "sum")).sort_values("valor", ascending=False))
-    l1, l2 = st.columns(2)
-    with l1:
-        with st.container(border=True, key="painel7"):
-            st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Dinheiro protegido por tipo de problema</h3>'
-                        '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">Fila inteira, 03/11 a 13/11</div>',
-                        unsafe_allow_html=True)
-            st.markdown(tabela([{"tipo_html": f'<span class="selo {SELO.get(r, ("erro", r))[0]}">{e(nomes.get(r, r))}</span>',
-                                 "qtd": int(row.qtd), "valor": brl(row.valor)} for r, row in por_regra.iterrows()],
-                               [("tipo_html", "Problema", ""), ("qtd", "Títulos", "num"), ("valor", "Valor", "num forte")],
-                               altura=420), unsafe_allow_html=True)
-    with l2:
-        with st.container(border=True, key="painel8"):
-            st.markdown('<h3 style="font-size:1.02rem;font-weight:600;margin:0">Próximos fechamentos</h3>'
-                        '<div class="nota" style="color:#5b6272;font-size:.82rem;margin-bottom:10px">O que vai ao banco em cada lote</div>',
-                        unsafe_allow_html=True)
-            linhas = []
-            for l in lotes:
-                g = df[df.lote_remessa == l]
-                r = g[g.decisao != "liberar"]
-                rl = info.loc[l]
-                curto = (f"{rl.banco_pagador.replace('Banco ', '')} · "
-                         f"{pd.to_datetime(rl.data_prevista).strftime('%d/%m')} · {rl.horario_fechamento}")
-                linhas.append({"lote": curto, "tit": len(g), "ret_html":
-                               f'<span class="selo fraude">{len(r)} retidos</span>' if len(r) else '<span class="selo ok">✓ limpo</span>',
-                               "valor": brl(g.valor.sum())})
-            st.markdown(tabela(linhas, [("lote", "Lote", ""), ("tit", "Títulos", "num"), ("ret_html", "Situação", ""),
-                                        ("valor", "Valor na fila", "num forte")], altura=420), unsafe_allow_html=True)
